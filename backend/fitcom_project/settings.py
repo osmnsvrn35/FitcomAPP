@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'fitcom_app',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
