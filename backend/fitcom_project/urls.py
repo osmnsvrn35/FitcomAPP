@@ -1,3 +1,6 @@
+from django.urls import path,include
+
+
 """
 URL configuration for fitcom_app project.
 
@@ -19,4 +22,6 @@ from django.urls import path
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/', include('fitcom_app.urls')),
+
 ]
