@@ -8,7 +8,7 @@ class Level(models.TextChoices):
     EXPERT = 'expert', ('Expert')
 
 class Exercise(models.Model):
-    exercise_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    exercise_id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True)
     name = models.CharField(max_length=200)
     body_part = models.CharField(max_length=100)
     equipment = models.CharField(max_length=100)
