@@ -37,7 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'fitcom_project',
+    'fitcom_app',
 ]
 
 MIDDLEWARE = [
