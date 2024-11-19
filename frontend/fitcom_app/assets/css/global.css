@@ -1,0 +1,233 @@
+/* General Styling */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Navigation Bar */
+.navbar {
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0;
+    background-color: #ffffff;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.nav-button {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.nav-button img {
+    width: 36px;
+    height: 36px;
+}
+
+/* Date Section */
+.date-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #ffffff;
+    padding: 10px;
+    border-radius: 12px;
+    width: 97%;
+    max-width: 750px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-top: 10px;
+}
+
+.date-section h1 {
+    font-size: 1.2em;
+    margin: 0;
+    text-align: center;
+    flex-grow: 1;
+}
+
+.nav-date {
+    font-size: 1.5em;
+    background: none;
+    border: none;
+    color: #1e90ff;
+    cursor: pointer;
+}
+
+/* Progress Bars Section */
+.progress-section {
+    background-color: #ffffff;
+    padding: 10px;
+    border-radius: 12px;
+    width: 97%; 
+    max-width: 750px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-top: 10px;
+}
+
+.nutrition-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.progress-bar {
+    height: 8px;
+    background: #ddd;
+    border-radius: 5px;
+    margin-top: 3px;
+    position: relative;
+}
+
+.progress-bar::after {
+    content: '';
+    height: 100%;
+    width: 60%;
+    background: #1e90ff;
+    position: absolute;
+    border-radius: 5px;
+}
+
+/* Program Buttons Section */
+.program-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background-color: #ffffff;
+    padding: 10px;
+    border-radius: 12px;
+    width: 97%; 
+    max-width: 750px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-top: 10px;
+}
+
+.program-button {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background-color: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #ddd;
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    transition: all 0.3s ease;
+
+    
+}
+
+.program-button:hover {
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    transform: scale(1.02);
+}
+
+.program-text {
+    font-size: 1em;
+    font-weight: bold;
+    color: #333;
+}
+
+.program-icon {
+    width: 50px;
+    height: 50px;
+}
+
+/* Water and Meal Entry Section */
+.third-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #ffffff;
+    padding: 10px;
+    border-radius: 12px;
+    width: 97%; 
+    max-width: 750px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-top: 10px;
+}
+
+.water-entry {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.water-amount {
+    font-size: 0.9em;
+    color: #333;
+    font-weight: bold;
+    text-align: center;
+}
+
+.water-glass {
+    width: 50px;
+    height: 100px;
+    background: #e0e7ec;
+    border-radius: 0 0 10px 10px;
+    border: 2px solid #bbb;
+    position: relative;
+    overflow: hidden;
+}
+
+.water-fill {
+    width: 100%;
+    background: linear-gradient(to top, #1e90ff, #87cefa);
+    position: absolute;
+    bottom: 0;
+    transition: height 0.3s ease;
+    height: 10%;
+}
+
+.circle-button {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #1e90ff;
+    color: white;
+    font-size: 1.2em;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.circle-button:hover {
+    transform: scale(1.1);
+}
+
+/* Meal Button */
+.add-meal {
+    background: linear-gradient(to right, #ff7e5f, #feb47b);
+    color: white;
+    border: none;
+    padding: 5px 80px; 
+    border-radius: 20px;
+    font-size: 1.2em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    width: 80%; 
+}
+
+.add-meal:hover {
+    transform: scale(1.05);
+    background: linear-gradient(to right, #ff6b4a, #fd956a);
+}
