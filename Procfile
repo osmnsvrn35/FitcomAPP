@@ -1,0 +1,1 @@
+web: gunicorn fitcom_project.wsgi
