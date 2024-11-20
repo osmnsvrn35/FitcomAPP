@@ -83,13 +83,13 @@ WSGI_APPLICATION = 'fitcom_project.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-     'default': {
+    'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'FitcomDB',
-        'USER': 'postgres',
-        'PASSWORD': 'osman1234',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'NAME': 'koyebdb',
+        'USER': 'koyeb-adm',
+        'PASSWORD': 'ycxj4FagzVQ9',
+        'HOST': 'ep-misty-sun-a2dlrk4r.eu-central-1.pg.koyeb.app',
+        'OPTIONS': {'sslmode': 'require'},
     }
 }
 
