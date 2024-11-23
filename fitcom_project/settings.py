@@ -26,13 +26,7 @@ SECRET_KEY = 'django-insecure-rlwfr*o60y6!ht9qncu9hi%1*x06kch*ndo1w8$x5&y%o_ba**
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = [
-
-    'fitcom-9fc3ecf39e06.herokuapp.com',
-    '127.0.0.1',
-    'localhost',
-
-]
+ALLOWED_HOSTS = ["*"]
 
 
 
@@ -50,6 +44,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'drf_yasg',
+    'corsheaders',
 
 ]
 
@@ -77,6 +72,12 @@ SWAGGER_SETTINGS = {
 
 
 AUTH_USER_MODEL = 'accounts.User'
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:8081",
+    "http://127.0.0.1:8081",
+]
+CORS_ORIGIN_ALLOW_ALL = True
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
