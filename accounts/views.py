@@ -5,6 +5,8 @@ from rest_framework import generics,status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 # Create your views here.
 
@@ -27,7 +29,18 @@ class RegisterView(generics.GenericAPIView):
 
 class LoginView(APIView):
 
-    permission_classes = []
+    permission_classes = [AllowAny]
+
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'email': openapi.Schema(type=openapi.TYPE_STRING, description='Email of the user'),
+                'password': openapi.Schema(type=openapi.TYPE_STRING, description='Password of the user'),
+            },
+            required=['email', 'password'],
+        )
+    )
     def post(self, request: Request):
         email = request.data.get('email')
         password = request.data.get('password')
