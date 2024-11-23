@@ -1,14 +1,14 @@
 from rest_framework.test import APITestCase
 from django.urls import reverse
 from rest_framework import status
-from .models import CustomUser
+from .models import User
 from rest_framework.authtoken.models import Token
 
 class GetExercisesTest(APITestCase):
 
     def setUp(self):
 
-        self.user = CustomUser.objects.create_user(email='testuser@example.com', password='testpassword')
+        self.user = User.objects.create_user(email='testuser@example.com', password='testpassword')
         self.token = Token.objects.create(user=self.user)
 
         self.register_url = reverse('register')
