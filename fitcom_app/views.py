@@ -9,7 +9,7 @@ class ExerciseListView(ListAPIView):
     API View to list all Exercise objects.
     """
 
-    permission_classes=[AllowAny]
+    permission_classes=[IsAuthenticated]
     serializer_class = ExerciseSerializer
     queryset = Exercise.objects.all()
 
