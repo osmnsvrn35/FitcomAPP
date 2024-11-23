@@ -73,7 +73,19 @@ SWAGGER_SETTINGS = {
 
 AUTH_USER_MODEL = 'accounts.User'
 
-CORS_ALLOWED_ORIGINS = ["*"]
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:8081",  # Your frontend origin
+    "http://127.0.0.1:8081",
+    "http://fitcom-9fc3ecf39e06.herokuapp.com"
+]
+CORS_ALLOWED_HOSTS = [
+    "http://fitcom-9fc3ecf39e06.herokuapp.com",
+    "fitcom-9fc3ecf39e06.herokuapp.com",
+    "localhost"
+
+]
+CORS_ALLOW_HEADERS = [ "accept", "referer", "accept-encoding", "authorization", "content-type", "dnt", "origin", "user-agent", "x-csrftoken", "x-requested-with" ]
+CORS_EXPOSE_HEADERS = ['Set-Cookie']
 CORS_ORIGIN_ALLOW_ALL = True
 
 MIDDLEWARE = [
@@ -81,6 +93,7 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
+    "corsheaders.middleware.CorsMiddleware",
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
