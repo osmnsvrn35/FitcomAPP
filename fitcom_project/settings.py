@@ -128,12 +128,11 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'koyebdb',
         'USER': 'koyeb-adm',
-        'PASSWORD': 'etpaf0Tb8OXA',
-        'HOST': 'ep-polished-fire-a2p01bbv.eu-central-1.pg.koyeb.app',
+        'PASSWORD': 'M5XcqgRiwv0l',
+        'HOST': 'ep-wandering-bonus-a2nt7c4a.eu-central-1.pg.koyeb.app',
         'OPTIONS': {'sslmode': 'require'},
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
