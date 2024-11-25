@@ -1,14 +1,11 @@
 import uuid
 from django.db import models
-
-# Create your models here.
-
+from statistics import mean
 
 class Level(models.TextChoices):
     BEGINNER = 'beginner', ('Beginner')
     INTERMEDIATE = 'intermediate', ('Intermediate')
     EXPERT = 'expert', ('Expert')
-
 
 class Exercise(models.Model):
     exercise_id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True)
@@ -26,9 +23,56 @@ class Exercise(models.Model):
     )
 
 class Program(models.Model):
-    program_id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True)
+    program_id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True, editable=False)
     name = models.CharField(max_length=255)
     description = models.TextField()
+    type = models.CharField(max_length=50, editable=False)
 
-    def __str__(self):
-        return self.name
+    def save(self, *args, **kwargs):
+        if not self.type:
+            self.type = self.__class__.__name__
+        super().save(*args, **kwargs)
+
+class WorkoutProgram(Program):
+    schedule = models.ManyToManyField(Exercise)
+    level = models.CharField(max_length=20,
+                             choices=Level.choices,
+                             editable=False)
+
+    def save(self, *args, **kwargs):
+
+        if not self.pk:
+            super().save(*args, **kwargs)
+        self.update_level()
+        super().save(*args, **kwargs)
+
+    def update_level(self):
+        exercises = self.schedule.all()
+        levels = [exercise.level for exercise in exercises]
+        if levels:
+
+            level_map = {
+                'beginner': 0,
+                'intermediate': 1,
+                'expert': 2
+            }
+            numerical_levels = [level_map[lev] for lev in levels]
+            avg_level = mean(numerical_levels)
+            if avg_level <= 1:
+                self.level = Level.BEGINNER
+            elif avg_level <= 2:
+                self.level = Level.INTERMEDIATE
+            else:
+                self.level = Level.EXPERT
+        else:
+            self.level = Level.BEGINNER
+
+    def add_exercise(self, exercise):
+        self.schedule.add(exercise)
+        self.update_level()
+        self.save()
+
+    def delete_exercise(self, exercise):
+        self.schedule.remove(exercise)
+        self.update_level()
+        self.save()
