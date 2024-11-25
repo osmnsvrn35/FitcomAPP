@@ -24,3 +24,11 @@ class Exercise(models.Model):
         choices=Level.choices,
         default=Level.BEGINNER
     )
+
+class Program(models.Model):
+    program_id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True)
+    name = models.CharField(max_length=255)
+    description = models.TextField()
+
+    def __str__(self):
+        return self.name

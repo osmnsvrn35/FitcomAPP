@@ -1,7 +1,11 @@
-from . import views
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import ExerciseViewSet, ProgramViewSet
+
+router = DefaultRouter()
+router.register(r'exercises', ExerciseViewSet)
+router.register(r'programs', ProgramViewSet)
 
 urlpatterns = [
-    path('exercises/', views.ExerciseListView.as_view(),name='exercises')
-
+    path('', include(router.urls)),
 ]
