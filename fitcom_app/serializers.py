@@ -1,17 +1,12 @@
 from rest_framework import serializers
-from .models import Exercise, Program, WorkoutProgram
+from .models import Exercise, WorkoutProgram
 
 class ExerciseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Exercise
         fields = '__all__'
 
-class ProgramSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Program
-        fields = '__all__'
-
-class WorkoutProgramSerializer(ProgramSerializer):
+class WorkoutProgramSerializer(serializers.ModelSerializer):
     schedule = ExerciseSerializer(many=True)
 
     class Meta:

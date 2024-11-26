@@ -1,6 +1,7 @@
 import uuid
 from django.db import models
 from statistics import mean
+from django.utils import timezone
 
 class Level(models.TextChoices):
     BEGINNER = 'beginner', ('Beginner')
@@ -22,18 +23,12 @@ class Exercise(models.Model):
         default=Level.BEGINNER
     )
 
-class Program(models.Model):
+
+class WorkoutProgram(models.Model):
     program_id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True, editable=False)
-    name = models.CharField(max_length=255)
-    description = models.TextField()
+    name = models.CharField(max_length=255,default="")
+    description = models.TextField(default= "")
     type = models.CharField(max_length=50, editable=False)
-
-    def save(self, *args, **kwargs):
-        if not self.type:
-            self.type = self.__class__.__name__
-        super().save(*args, **kwargs)
-
-class WorkoutProgram(Program):
     schedule = models.ManyToManyField(Exercise)
     level = models.CharField(max_length=20,
                              choices=Level.choices,
