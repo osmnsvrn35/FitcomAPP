@@ -28,7 +28,6 @@ class WorkoutProgram(models.Model):
     program_id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True, editable=False)
     name = models.CharField(max_length=255,default="")
     description = models.TextField(default= "")
-    type = models.CharField(max_length=50, editable=False)
     schedule = models.ManyToManyField(Exercise)
     level = models.CharField(max_length=20,
                              choices=Level.choices,
