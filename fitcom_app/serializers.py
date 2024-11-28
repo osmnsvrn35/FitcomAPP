@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Exercise, WorkoutProgram,UserCustomWorkoutProgram
+from .models import Exercise, WorkoutProgram,UserCustomWorkoutProgram,Post,Comment
 
 class ExerciseSerializer(serializers.ModelSerializer):
     class Meta:
@@ -68,3 +68,16 @@ class WorkoutProgramSerializer(serializers.ModelSerializer):
         instance.update_level()
         return instance
 
+
+class CommentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comment
+        fields = ['comment_id', 'author', 'content', 'timestamp']
+
+class PostSerializer(serializers.ModelSerializer):
+    comments = CommentSerializer(many=True, read_only=True)
+    author = serializers.ReadOnlyField(source='author.username')
+
+    class Meta:
+        model = Post
+        fields = ['post_id', 'author', 'title', 'content', 'timestamp', 'likes', 'comments']

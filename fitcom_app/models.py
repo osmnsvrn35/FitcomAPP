@@ -58,3 +58,38 @@ class WorkoutProgram(AbstractWorkoutProgram):
 
 class UserCustomWorkoutProgram(AbstractWorkoutProgram):
     user = models.ForeignKey("accounts.User", on_delete=models.CASCADE)
+
+class Comment(models.Model):
+    comment_id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True, editable=False)
+    author = models.ForeignKey('accounts.User', on_delete=models.CASCADE, related_name='comments')
+    content = models.TextField()
+    timestamp = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return f'Comment by {self.author.username} on {self.timestamp}'
+
+
+class Post(models.Model):
+    post_id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True, editable=False)
+    author = models.ForeignKey('accounts.User', on_delete=models.CASCADE, related_name='posts')
+    title = models.CharField(max_length=255)
+    content = models.TextField()
+    timestamp = models.DateTimeField(default=timezone.now)
+    likes = models.PositiveIntegerField(default=0)
+    comments = models.ManyToManyField(Comment, related_name='post_comments', blank=True)
+
+    def __str__(self):
+        return self.title
+
+    def like_post(self):
+        self.likes += 1
+        self.save()
+
+    def add_comment(self, comment):
+        self.comments.add(comment)
+        self.save()
+
+    def delete_comment(self, comment):
+        self.comments.remove(comment)
+        self.save()
+

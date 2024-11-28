@@ -1,7 +1,8 @@
 from rest_framework import generics, status, viewsets
 from rest_framework.permissions import AllowAny, IsAdminUser,IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.decorators import action
+from rest_framework.views import APIView
+
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
 from drf_yasg.utils import swagger_auto_schema
@@ -23,7 +24,7 @@ class RegisterView(generics.GenericAPIView):
 
 
 
-class LoginView(generics.GenericAPIView):
+class LoginView(APIView):
     permission_classes = [AllowAny]
     serializer_class = LoginSerializer
 
@@ -51,9 +52,8 @@ class LoginView(generics.GenericAPIView):
         return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
 
-class LogoutView(generics.GenericAPIView):
+class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
-
     def post(self, request):
         try:
             token = request.auth
@@ -61,8 +61,6 @@ class LogoutView(generics.GenericAPIView):
             return Response({"message": "Logout successful"}, status=status.HTTP_200_OK)
         except (AttributeError, Token.DoesNotExist):
             return Response({"error": "Invalid token or user not authenticated"}, status=status.HTTP_400_BAD_REQUEST)
-
-
 
 
 class UserViewSet(viewsets.ModelViewSet):
