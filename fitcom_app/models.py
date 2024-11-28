@@ -1,7 +1,9 @@
 import uuid
 from django.db import models
 from statistics import mean
+from django.contrib.auth import get_user_model
 from django.utils import timezone
+
 
 class Level(models.TextChoices):
     BEGINNER = 'beginner', ('Beginner')
@@ -17,24 +19,19 @@ class Exercise(models.Model):
     target = models.CharField(max_length=100)
     secondary_muscles = models.JSONField(default=list)
     instructions = models.JSONField(default=list)
-    level = models.CharField(
-        max_length=20,
-        choices=Level.choices,
-        default=Level.BEGINNER
-    )
+    level = models.CharField(max_length=20, choices=Level.choices, default=Level.BEGINNER)
 
-
-class WorkoutProgram(models.Model):
+class AbstractWorkoutProgram(models.Model):
     program_id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True, editable=False)
-    name = models.CharField(max_length=255,default="")
-    description = models.TextField(default= "")
+    name = models.CharField(max_length=255, default="")
+    description = models.TextField(default="")
     schedule = models.ManyToManyField(Exercise)
-    level = models.CharField(max_length=20,
-                             choices=Level.choices,
-                             editable=False)
+    level = models.CharField(max_length=20, choices=Level.choices, editable=False)
+
+    class Meta:
+        abstract = True
 
     def save(self, *args, **kwargs):
-
         if not self.pk:
             super().save(*args, **kwargs)
         self.update_level()
@@ -44,12 +41,7 @@ class WorkoutProgram(models.Model):
         exercises = self.schedule.all()
         levels = [exercise.level for exercise in exercises]
         if levels:
-
-            level_map = {
-                'beginner': 0,
-                'intermediate': 1,
-                'expert': 2
-            }
+            level_map = {'beginner': 0, 'intermediate': 1, 'expert': 2}
             numerical_levels = [level_map[lev] for lev in levels]
             avg_level = mean(numerical_levels)
             if avg_level <= 1:
@@ -61,12 +53,8 @@ class WorkoutProgram(models.Model):
         else:
             self.level = Level.BEGINNER
 
-    def add_exercise(self, exercise):
-        self.schedule.add(exercise)
-        self.update_level()
-        self.save()
+class WorkoutProgram(AbstractWorkoutProgram):
+    user = models.ForeignKey("accounts.User", on_delete=models.CASCADE, null=True, blank=True)
 
-    def delete_exercise(self, exercise):
-        self.schedule.remove(exercise)
-        self.update_level()
-        self.save()
+class UserCustomWorkoutProgram(AbstractWorkoutProgram):
+    user = models.ForeignKey("accounts.User", on_delete=models.CASCADE)
