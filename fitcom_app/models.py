@@ -54,7 +54,7 @@ class AbstractWorkoutProgram(models.Model):
             self.level = Level.BEGINNER
 
 class WorkoutProgram(AbstractWorkoutProgram):
-    user = models.ForeignKey("accounts.User", on_delete=models.CASCADE, null=True, blank=True)
+    pass
 
 class UserCustomWorkoutProgram(AbstractWorkoutProgram):
     user = models.ForeignKey("accounts.User", on_delete=models.CASCADE)

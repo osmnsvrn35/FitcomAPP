@@ -2,7 +2,9 @@ from django.db import models
 import uuid
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
-from fitcom_app.models import WorkoutProgram
+from fitcom_app.models import WorkoutProgram, UserCustomWorkoutProgram
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password, **extra_fields):
@@ -32,7 +34,12 @@ class User(AbstractUser):
     userLevel = models.CharField(max_length=20, null=True, blank=True)
     profilePicture = models.URLField(max_length=200, null=True, blank=True)
     age = models.PositiveIntegerField(null=True, blank=True)
-    saved_workout_programs = models.ManyToManyField(WorkoutProgram,blank=True,related_name='saved_by_users')
+    saved_workout_programs = models.ManyToManyField(UserCustomWorkoutProgram, blank=True, related_name='saved_by_users')
+
+    selected_program_type = models.ForeignKey(ContentType, on_delete=models.SET_NULL, null=True, blank=True)
+    selected_program_id = models.UUIDField(null=True, blank=True)
+    selected_workout_program = GenericForeignKey('selected_program_type', 'selected_program_id')
+
     objects = CustomUserManager()
 
     USERNAME_FIELD = 'email'

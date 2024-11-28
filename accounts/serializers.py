@@ -2,6 +2,8 @@ from rest_framework import serializers
 from rest_framework.validators import ValidationError
 from .models import User
 from rest_framework.authtoken.models import Token
+from fitcom_app.models import WorkoutProgram
+from django.contrib.contenttypes.models import ContentType
 
 class RegisterSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(max_length=80)
@@ -40,6 +42,16 @@ class LoginSerializer(serializers.Serializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    selected_workout_program = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'weight', 'height', 'gender', 'userLevel', 'profilePicture', 'age','saved_workout_programs']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'weight', 'height', 'gender', 'userLevel', 'profilePicture', 'age', 'saved_workout_programs', 'selected_workout_program']
+
+    def get_selected_workout_program(self, obj):
+        if obj.selected_workout_program:
+            return {
+                "program_id": obj.selected_workout_program.pk,
+                "program_type": ContentType.objects.get_for_model(obj.selected_workout_program).model,
+            }
+        return None
