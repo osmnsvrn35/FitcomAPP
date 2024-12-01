@@ -40,6 +40,12 @@ class User(AbstractUser):
     selected_program_id = models.UUIDField(null=True, blank=True)
     selected_workout_program = GenericForeignKey('selected_program_type', 'selected_program_id')
 
+    water_needs = models.FloatField(null=True, blank=True)
+    kcal_needs = models.FloatField(null=True, blank=True)
+    carbs_needs = models.FloatField(null=True,blank=True)
+    protein_needs = models.FloatField(null=True, blank=True)
+    fat_needs = models.FloatField(null=True, blank=True)
+
     objects = CustomUserManager()
 
     USERNAME_FIELD = 'email'
