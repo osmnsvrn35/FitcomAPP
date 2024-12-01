@@ -6,10 +6,10 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  Alert,
 } from "react-native";
-import { Picker } from "@react-native-picker/picker";
 
-const RegisterScreen = () => {
+const RegisterScreen: React.FC = () => {
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -17,35 +17,72 @@ const RegisterScreen = () => {
     age: "",
     height: "",
     weight: "",
-    activityLevel: "",
     gender: "",
   });
 
-  const activityLevels = [
-    "Select Activity Level",
-    "BMR",
-    "Sedentary: little or no exercise",
-    "Light exercise: 1-3 times/week",
-    "Moderate exercise: 4-5 times/week",
-    "Daily exercise or intense exercise 3-4 times/week",
-    "Very Active: intense exercise 6-7 times/week",
-    "Extra Active: very intense exercise daily, or physical job",
-  ];
-
   const handleInputChange = (key: string, value: string) => {
-    setFormData((prevData) => ({ ...prevData, [key]: value }));
+    setFormData((prevData) => ({
+      ...prevData,
+      [key]: value,
+    }));
   };
 
-  const handleRegister = () => {
-    console.log("Registering user:", formData);
-    
+  const handleRegister = async () => {
+    if (
+      !formData.username ||
+      !formData.email ||
+      !formData.password ||
+      !formData.age ||
+      !formData.height ||
+      !formData.weight ||
+      !formData.gender
+    ) {
+      Alert.alert("Error", "Please fill in all fields.");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        "https://fitcom-9fc3ecf39e06.herokuapp.com/auth/register/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            username: formData.username,
+            email: formData.email,
+            password: formData.password,
+            age: parseInt(formData.age),
+            height: parseFloat(formData.height),
+            weight: parseFloat(formData.weight),
+            gender: formData.gender,
+          }),
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Registration successful:", data);
+        Alert.alert("Success", "Registration successful! Please log in.");
+      } else {
+        const errorData = await response.json();
+        Alert.alert(
+          "Registration Failed",
+          errorData.message || "Unable to register."
+        );
+      }
+    } catch (error) {
+      console.error("Registration error:", error);
+      Alert.alert("Error", "Unable to connect to the server.");
+    }
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Register</Text>
 
-      <Text style={styles.label}>Username:</Text>
+      <Text style={styles.label}>Username</Text>
       <TextInput
         style={styles.input}
         value={formData.username}
@@ -53,7 +90,7 @@ const RegisterScreen = () => {
         placeholder="Enter username"
       />
 
-      <Text style={styles.label}>Email:</Text>
+      <Text style={styles.label}>Email</Text>
       <TextInput
         style={styles.input}
         value={formData.email}
@@ -62,7 +99,7 @@ const RegisterScreen = () => {
         keyboardType="email-address"
       />
 
-      <Text style={styles.label}>Password:</Text>
+      <Text style={styles.label}>Password</Text>
       <TextInput
         style={styles.input}
         value={formData.password}
@@ -71,7 +108,7 @@ const RegisterScreen = () => {
         secureTextEntry
       />
 
-      <Text style={styles.label}>Age:</Text>
+      <Text style={styles.label}>Age</Text>
       <TextInput
         style={styles.input}
         value={formData.age}
@@ -80,7 +117,7 @@ const RegisterScreen = () => {
         keyboardType="numeric"
       />
 
-      <Text style={styles.label}>Height (cm):</Text>
+      <Text style={styles.label}>Height (cm)</Text>
       <TextInput
         style={styles.input}
         value={formData.height}
@@ -89,7 +126,7 @@ const RegisterScreen = () => {
         keyboardType="numeric"
       />
 
-      <Text style={styles.label}>Weight (kg):</Text>
+      <Text style={styles.label}>Weight (kg)</Text>
       <TextInput
         style={styles.input}
         value={formData.weight}
@@ -98,32 +135,40 @@ const RegisterScreen = () => {
         keyboardType="numeric"
       />
 
-      {/* Activity Level */}
-      <View style={styles.pickerContainer}>
-        <Text style={styles.label}>Activity Level:</Text>
-        <Picker
-          selectedValue={formData.activityLevel}
-          onValueChange={(value: string) => handleInputChange("activityLevel", value)}
-          style={styles.picker}
+      <Text style={styles.label}>Gender</Text>
+      <View style={styles.genderContainer}>
+        <TouchableOpacity
+          style={[
+            styles.genderButton,
+            formData.gender === "Male" && styles.selectedGenderButton,
+          ]}
+          onPress={() => handleInputChange("gender", "Male")}
         >
-          {activityLevels.map((level, index) => (
-            <Picker.Item key={index} label={level} value={level} />
-          ))}
-        </Picker>
-      </View>
-
-      {/* Gender */}
-      <View style={styles.pickerContainer}>
-        <Text style={styles.label}>Gender:</Text>
-        <Picker
-          selectedValue={formData.gender}
-          onValueChange={(value: string) => handleInputChange("gender", value)}
-          style={styles.picker}
+          <Text
+            style={[
+              styles.genderButtonText,
+              formData.gender === "Male" && styles.selectedGenderButtonText,
+            ]}
+          >
+            Male
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.genderButton,
+            formData.gender === "Female" && styles.selectedGenderButton,
+          ]}
+          onPress={() => handleInputChange("gender", "Female")}
         >
-          <Picker.Item label="Select Gender" value="" />
-          <Picker.Item label="Male" value="Male" />
-          <Picker.Item label="Female" value="Female" />
-        </Picker>
+          <Text
+            style={[
+              styles.genderButtonText,
+              formData.gender === "Female" && styles.selectedGenderButtonText,
+            ]}
+          >
+            Female
+          </Text>
+        </TouchableOpacity>
       </View>
 
       <TouchableOpacity style={styles.registerButton} onPress={handleRegister}>
@@ -157,17 +202,33 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     backgroundColor: "#fff",
   },
-  pickerContainer: {
+  genderContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 15,
   },
-  picker: {
+  genderButton: {
+    flex: 1,
+    padding: 15,
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 8,
-    backgroundColor: "#fff",
+    alignItems: "center",
+    marginHorizontal: 5,
+  },
+  selectedGenderButton: {
+    backgroundColor: "#1e90ff",
+    borderColor: "#1e90ff",
+  },
+  genderButtonText: {
+    color: "#000",
+  },
+  selectedGenderButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
   },
   registerButton: {
-    backgroundColor: "#007bff",
+    backgroundColor: "#1e90ff",
     padding: 15,
     borderRadius: 8,
     alignItems: "center",

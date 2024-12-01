@@ -1,62 +1,77 @@
 import React from "react";
-import { TouchableOpacity, View, StyleSheet } from "react-native";
-import { Tabs } from "expo-router";
-import { FontAwesome } from "@expo/vector-icons"; 
-import { Colors } from "@/constants/Colors"; 
-import { useColorScheme } from "@/hooks/useColorScheme"; 
+import { Tabs, useNavigation } from "expo-router";
+import { FontAwesome } from "@expo/vector-icons";
+import { View, StyleSheet, TouchableOpacity } from "react-native";
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
+        tabBarActiveTintColor: "#1e90ff",
+        tabBarInactiveTintColor: "#a9a9a9",
+        tabBarStyle: {
+          backgroundColor: "#fff",
+          borderTopWidth: 1,
+          borderTopColor: "#eaeaea",
+          height: 70,
+          paddingBottom: 10,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+        },
         headerShown: false,
       }}
     >
       {/* Home Tab */}
       <Tabs.Screen
-        name="index"
+        name="HomeScreen"
         options={{
           title: "Home",
-          tabBarIcon: ({ color }) => (
-            <FontAwesome name="home" size={24} color={color} />
+          tabBarIcon: ({ color, size }) => (
+            <FontAwesome name="home" size={size || 24} color={color} />
           ),
         }}
       />
 
       {/* Community Tab */}
       <Tabs.Screen
-        name="community"
+        name="CommunityScreen"
         options={{
           title: "Community",
-          tabBarIcon: ({ color }) => (
-            <FontAwesome name="users" size={24} color={color} />
+          tabBarIcon: ({ color, size }) => (
+            <FontAwesome name="users" size={size || 24} color={color} />
           ),
         }}
       />
 
-
+      {/* Central Button for Food Scanner */}
+      <Tabs.Screen
+        name="FoodScannerScreen"
+        options={{
+          title: "",
+          tabBarIcon: () => null, 
+          tabBarButton: () => <CentralButton />,
+        }}
+      />
 
       {/* Fitness Tab */}
       <Tabs.Screen
-        name="fitness"
+        name="FitnessScreen"
         options={{
           title: "Fitness",
-          tabBarIcon: ({ color }) => (
-            <FontAwesome name="heartbeat" size={24} color={color} />
+          tabBarIcon: ({ color, size }) => (
+            <FontAwesome name="heartbeat" size={size || 24} color={color} />
           ),
         }}
       />
 
       {/* Settings Tab */}
       <Tabs.Screen
-        name="settings"
+        name="SettingsScreen"
         options={{
           title: "Settings",
-          tabBarIcon: ({ color }) => (
-            <FontAwesome name="cogs" size={24} color={color} />
+          tabBarIcon: ({ color, size }) => (
+            <FontAwesome name="cogs" size={size || 24} color={color} />
           ),
         }}
       />
@@ -64,14 +79,40 @@ export default function TabLayout() {
   );
 }
 
+const CentralButton = () => {
+  const navigation = useNavigation();
+
+  return (
+    <View style={styles.centralButtonContainer}>
+      <TouchableOpacity
+        style={styles.centralButton}
+        onPress={() => navigation.navigate("FoodScannerScreen" as never)}
+      >
+        <FontAwesome name="camera" size={28} color="#fff" />
+      </TouchableOpacity>
+    </View>
+  );
+};
+
 const styles = StyleSheet.create({
-  floatingButton: {
-    borderRadius: 35, 
+  centralButtonContainer: {
+    position: "absolute",
+    bottom: 10,
+    left: "50%",
+    transform: [{ translateX: -35 }],
+    zIndex: 1,
+  },
+  centralButton: {
     width: 70,
     height: 70,
+    backgroundColor: "#007BFF",
+    borderRadius: 35,
     justifyContent: "center",
     alignItems: "center",
-    marginTop: -30, 
-    elevation: 8, 
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
 });

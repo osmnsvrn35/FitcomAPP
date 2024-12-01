@@ -7,17 +7,13 @@ import {
   StyleSheet,
   Alert,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation } from "@react-navigation/native";
-
-type StackParamList = {
-  Login: undefined;
-  RegisterScreen: undefined;
-  TabLayout: undefined;
-};
+import { AppStackParamList } from "./app";
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<
-  StackParamList,
+  AppStackParamList,
   "Login"
 >;
 
@@ -30,12 +26,45 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ setIsLoggedIn }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = () => {
-    if (email && password) {      
-      console.log("Logging in with:", email, password);
-      setIsLoggedIn(true); 
-    } else {
-      Alert.alert("Error", "Please enter email and password");
+  // Debugging: Log setIsLoggedIn
+  console.log("setIsLoggedIn function:", setIsLoggedIn);
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert("Error", "Please enter both email and password.");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        "https://fitcom-9fc3ecf39e06.herokuapp.com/auth/login/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: email,
+            password: password,
+          }),
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Login successful:", data);
+
+        await AsyncStorage.setItem("authToken", data.token);
+
+        Alert.alert("Success", "Login successful");
+        setIsLoggedIn(true); // Navigate to main app
+      } else {
+        const errorData = await response.json();
+        Alert.alert("Login Failed", errorData.message || "Invalid credentials");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      Alert.alert("Error", "Unable to connect to the server.");
     }
   };
 
