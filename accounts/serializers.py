@@ -2,7 +2,7 @@
 
 from rest_framework import serializers
 from rest_framework.validators import ValidationError
-from .models import User
+from .models import User, DailyUserProgress
 from rest_framework.authtoken.models import Token
 from fitcom_app.models import WorkoutProgram
 from django.contrib.contenttypes.models import ContentType
@@ -56,3 +56,10 @@ class UserSerializer(serializers.ModelSerializer):
                 "program_type": ContentType.objects.get_for_model(obj.selected_workout_program).model,
             }
         return None
+
+class DailyUserProgressSerializer(serializers.ModelSerializer):
+    user = serializers.SlugRelatedField(slug_field='username', queryset=User.objects.all())
+
+    class Meta:
+        model = DailyUserProgress
+        fields = '__all__'

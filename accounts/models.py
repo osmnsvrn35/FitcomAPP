@@ -5,6 +5,7 @@ from django.contrib.auth.models import AbstractUser
 from fitcom_app.models import WorkoutProgram, UserCustomWorkoutProgram
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from django.utils import timezone
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password, **extra_fields):
@@ -24,6 +25,11 @@ class CustomUserManager(BaseUserManager):
             raise ValueError('Superuser must have is_superuser=True.')
 
         return self.create_user(email, password, **extra_fields)
+
+
+
+
+
 
 class User(AbstractUser):
     ACTIVITY_LEVEL_CHOICES = [
@@ -92,3 +98,35 @@ class User(AbstractUser):
         self.water_needs = round(self.weight * 0.033, 1)
 
         self.save()
+
+
+class DailyUserProgress(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='daily_progress')
+    date = models.DateField(timezone.now())
+    workout_completed = models.BooleanField(default=False)
+    kcal_burned = models.FloatField(default=0.0)
+
+    kcal_consumed = models.FloatField(default=0.0)
+    protein_consumed = models.FloatField(default=0.0)
+    carbs_consumed = models.FloatField(default=0.0)
+    fat_consumed = models.FloatField(default=0.0)
+    water_consumed = models.FloatField(default=0.0)
+
+    class Meta:
+        unique_together = ('user', 'date')
+        ordering = ['-date']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.date}"
+
+    def get_progress_vs_needs(self):
+
+        user = self.user
+        user.calculate_needs()
+        return {
+            'kcal_diff': round(self.kcal_consumed - user.kcal_needs, 1),
+            'protein_diff': round(self.protein_consumed - user.protein_needs, 1),
+            'carbs_diff': round(self.carbs_consumed - user.carbs_needs, 1),
+            'fat_diff': round(self.fat_consumed - user.fat_needs, 1),
+            'water_diff': round(self.water_consumed - user.water_needs, 1)
+        }

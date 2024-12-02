@@ -7,8 +7,10 @@ from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-from .models import User
-from .serializers import RegisterSerializer, UserSerializer,LoginSerializer
+from .models import User,DailyUserProgress
+from .serializers import RegisterSerializer, UserSerializer,LoginSerializer, DailyUserProgressSerializer
+
+
 
 class RegisterView(generics.GenericAPIView):
     serializer_class = RegisterSerializer
@@ -66,4 +68,11 @@ class LogoutView(APIView):
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminUser]
+
+
+
+
+class DailyUserProgressViewSet(viewsets.ModelViewSet):
+    queryset = DailyUserProgress.objects.all()
+    serializer_class = DailyUserProgressSerializer

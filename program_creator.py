@@ -34,7 +34,7 @@ for exercise in exercises_data:
     if body_part in exercises:
         exercises[body_part].append(exercise)
 
-# Function to create a single workout program
+
 def create_program():
     program = {}
     selected_muscle_groups = random.sample(muscle_groups, random.randint(3, 5))
@@ -55,21 +55,20 @@ def create_program():
 
     return program
 
-# Generate 50 workout programs
 programs = [create_program() for _ in range(50)]
 
-# Push to the database
+
 for i, program in enumerate(programs):
     workout_program = WorkoutProgram(name=f"Random Program {random.randint(1, 1000000)}", description="A randomly generated workout program")
     workout_program.save()
     for exercise_name, details in program.items():
         exercises_qs = Exercise.objects.filter(name=exercise_name)
         if exercises_qs.exists():
-            exercise = exercises_qs.first()  # Use the first match if multiple exist
+            exercise = exercises_qs.first()
             workout_program.schedule.add(exercise)
     workout_program.save()
 
-# Print the generated programs
+
 for i, program in enumerate(programs):
     print(f"Workout Program {i+1}:")
     for exercise_name, details in program.items():
@@ -82,6 +81,6 @@ for i, program in enumerate(programs):
         print(f"    - Level: {details['level']}")
     print("\n")
 
-# Save to file
+
 with open('workout_programs.json', 'w') as file:
     json.dump(programs, file, indent=4)
