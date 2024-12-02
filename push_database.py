@@ -20,7 +20,7 @@ def get_exercises_fields(exercise_data):
             target=exercise["target"],
             secondary_muscles=exercise["secondaryMuscles"],
             instructions=exercise["instructions"],
-            level="beginner"
+            level=exercise["level"]
         )
         print(f"Created exercise: {exercise_instance.name}")
 if os.path.exists(exercise_data_url):

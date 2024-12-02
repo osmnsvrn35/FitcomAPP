@@ -13,7 +13,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(min_length=8, write_only=True)
     weight = serializers.FloatField(required=True)
     height = serializers.FloatField(required=True)
-    gender = serializers.ChoiceField(choices=User.GENDER_CHOICES, required=True)  # Updated
+    gender = serializers.ChoiceField(choices=User.GENDER_CHOICES, required=True)
     userLevel = serializers.ChoiceField(choices=User.ACTIVITY_LEVEL_CHOICES, required=False)
     profilePicture = serializers.URLField(required=False)
     age = serializers.IntegerField(required=False)

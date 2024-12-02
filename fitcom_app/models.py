@@ -1,14 +1,14 @@
 import uuid
 from django.db import models
 from statistics import mean
-from django.contrib.auth import get_user_model
+
 from django.utils import timezone
 
 
 class Level(models.TextChoices):
-    BEGINNER = 'beginner', ('Beginner')
-    INTERMEDIATE = 'intermediate', ('Intermediate')
-    EXPERT = 'expert', ('Expert')
+    BEGINNER = 'Beginner', ('Beginner')
+    INTERMEDIATE = 'Intermediate', ('Intermediate')
+    EXPERT = 'Expert', ('Expert')
 
 class Exercise(models.Model):
     exercise_id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True)
@@ -41,17 +41,15 @@ class AbstractWorkoutProgram(models.Model):
         exercises = self.schedule.all()
         levels = [exercise.level for exercise in exercises]
         if levels:
-            level_map = {'beginner': 0, 'intermediate': 1, 'expert': 2}
+            level_map = {'Beginner': 0, 'Intermediate': 1, 'Expert': 2}
             numerical_levels = [level_map[lev] for lev in levels]
             avg_level = mean(numerical_levels)
-            if avg_level <= 1:
+            if avg_level <= 0.5:
                 self.level = Level.BEGINNER
-            elif avg_level <= 2:
+            elif avg_level <= 1.5:
                 self.level = Level.INTERMEDIATE
             else:
                 self.level = Level.EXPERT
-        else:
-            self.level = Level.BEGINNER
 
 class WorkoutProgram(AbstractWorkoutProgram):
     pass

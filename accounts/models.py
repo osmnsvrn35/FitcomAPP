@@ -38,8 +38,7 @@ class User(AbstractUser):
     GENDER_CHOICES = [
         ('male', 'Male'),
         ('female', 'Female'),
-        ('other', 'Other'),
-        ('prefer_not_to_say', 'Prefer not to say')
+
     ]
 
     email = models.EmailField(max_length=80, unique=True)
@@ -75,8 +74,6 @@ class User(AbstractUser):
             bmr = 10 * self.weight + 6.25 * self.height - 5 * self.age + 5
         elif self.gender == 'female':
             bmr = 10 * self.weight + 6.25 * self.height - 5 * self.age - 161
-        else:
-            bmr = 10 * self.weight + 6.25 * self.height - 5 * self.age - 78
 
         activity_levels = {
             'Sedentary': 1.2,
