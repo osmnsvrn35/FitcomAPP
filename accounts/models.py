@@ -26,12 +26,28 @@ class CustomUserManager(BaseUserManager):
         return self.create_user(email, password, **extra_fields)
 
 class User(AbstractUser):
+    ACTIVITY_LEVEL_CHOICES = [
+        ('Sedentary', 'Sedentary: little or no exercise'),
+        ('Light', 'Light: exercise 1-3 times/week'),
+        ('Moderate', 'Moderate: exercise 4-5 times/week'),
+        ('Active', 'Active: daily exercise or intense exercise 3-4 times/week'),
+        ('Very Active', 'Very Active: intense exercise 6-7 times/week'),
+        ('Extra Active', 'Extra Active: very intense exercise daily, or physical job'),
+    ]
+
+    GENDER_CHOICES = [
+        ('male', 'Male'),
+        ('female', 'Female'),
+        ('other', 'Other'),
+        ('prefer_not_to_say', 'Prefer not to say')
+    ]
+
     email = models.EmailField(max_length=80, unique=True)
     username = models.CharField(max_length=45)
-    weight = models.FloatField(null=True, blank=True)
-    height = models.FloatField(null=True, blank=True)
-    gender = models.CharField(max_length=10, null=True, blank=True)
-    userLevel = models.CharField(max_length=20, null=True, blank=True)
+    weight = models.FloatField(blank=False)
+    height = models.FloatField(blank=False)
+    gender = models.CharField(max_length=20, choices=GENDER_CHOICES, blank=False)
+    userLevel = models.CharField(max_length=20, choices=ACTIVITY_LEVEL_CHOICES, blank=True, null=True)
     profilePicture = models.URLField(max_length=200, null=True, blank=True)
     age = models.PositiveIntegerField(null=True, blank=True)
     saved_workout_programs = models.ManyToManyField(UserCustomWorkoutProgram, blank=True, related_name='saved_by_users')
@@ -42,7 +58,7 @@ class User(AbstractUser):
 
     water_needs = models.FloatField(null=True, blank=True)
     kcal_needs = models.FloatField(null=True, blank=True)
-    carbs_needs = models.FloatField(null=True,blank=True)
+    carbs_needs = models.FloatField(null=True, blank=True)
     protein_needs = models.FloatField(null=True, blank=True)
     fat_needs = models.FloatField(null=True, blank=True)
 
@@ -53,3 +69,29 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.username
+
+    def calculate_needs(self):
+        if self.gender == 'male':
+            bmr = 10 * self.weight + 6.25 * self.height - 5 * self.age + 5
+        elif self.gender == 'female':
+            bmr = 10 * self.weight + 6.25 * self.height - 5 * self.age - 161
+        else:
+            bmr = 10 * self.weight + 6.25 * self.height - 5 * self.age - 78
+
+        activity_levels = {
+            'Sedentary': 1.2,
+            'Light': 1.375,
+            'Moderate': 1.55,
+            'Active': 1.725,
+            'Very Active': 1.9,
+            'Extra Active': 2.0
+        }
+
+        activity_factor = activity_levels.get(self.userLevel, 1.2)
+        self.kcal_needs = round(bmr * activity_factor, 1)
+        self.protein_needs = round(self.weight * 1.8, 1)
+        self.fat_needs = round(self.kcal_needs * 0.25 / 9, 1)
+        self.carbs_needs = round((self.kcal_needs - (self.protein_needs * 4 + self.fat_needs * 9)) / 4, 1)
+        self.water_needs = round(self.weight * 0.033, 1)
+
+        self.save()

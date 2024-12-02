@@ -1,3 +1,5 @@
+# serializers.py
+
 from rest_framework import serializers
 from rest_framework.validators import ValidationError
 from .models import User
@@ -9,10 +11,10 @@ class RegisterSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(max_length=80)
     username = serializers.CharField(max_length=45)
     password = serializers.CharField(min_length=8, write_only=True)
-    weight = serializers.FloatField(required=False)
-    height = serializers.FloatField(required=False)
-    gender = serializers.CharField(max_length=10, required=False)
-    userLevel = serializers.CharField(max_length=20, required=False)
+    weight = serializers.FloatField(required=True)
+    height = serializers.FloatField(required=True)
+    gender = serializers.ChoiceField(choices=User.GENDER_CHOICES, required=True)  # Updated
+    userLevel = serializers.ChoiceField(choices=User.ACTIVITY_LEVEL_CHOICES, required=False)
     profilePicture = serializers.URLField(required=False)
     age = serializers.IntegerField(required=False)
 
@@ -30,23 +32,26 @@ class RegisterSerializer(serializers.ModelSerializer):
         password = validated_data.pop('password')
         user = super().create(validated_data)
         user.set_password(password)
+        user.calculate_needs()
         user.save()
         Token.objects.create(user=user)
+
         return user
-
-
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
-
 
 class UserSerializer(serializers.ModelSerializer):
     selected_workout_program = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'weight', 'height', 'gender', 'userLevel', 'profilePicture', 'age', 'saved_workout_programs', 'selected_workout_program']
+        fields = [
+            'id', 'username', 'email', 'first_name', 'last_name',
+            'weight', 'height', 'gender', 'userLevel', 'profilePicture',
+            'age', 'saved_workout_programs', 'selected_workout_program'
+        ]
 
     def get_selected_workout_program(self, obj):
         if obj.selected_workout_program:
