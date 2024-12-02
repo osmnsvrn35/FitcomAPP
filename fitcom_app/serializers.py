@@ -53,6 +53,7 @@ class WorkoutProgramSerializer(serializers.ModelSerializer):
         schedule_ids = validated_data.pop('schedule_ids')
         workout_program = WorkoutProgram.objects.create(**validated_data)
         workout_program.schedule.set(schedule_ids)
+
         workout_program.save()
         return workout_program
 
