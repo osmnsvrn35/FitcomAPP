@@ -10,8 +10,9 @@ import {
   Image,
   TouchableOpacity,
 } from "react-native";
-import * as ImagePicker from "expo-image-picker";
+
 import { FontAwesome } from "@expo/vector-icons";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type Post = {
   post_id: string;
@@ -47,14 +48,24 @@ const CommunityScreen = () => {
     fetchPosts();
   }, []);
 
-  // Fetch posts from the backend
+  const getUserToken = async (): Promise<string | null> => {
+    try {
+      const token = await AsyncStorage.getItem('userToken');
+      return token;
+    } catch (error) {
+      console.error("Error retrieving user token:", error);
+      return null;
+    }
+  };
+
+
   const fetchPosts = async (): Promise<void> => {
     try {
       const response = await fetch("https://fitcom-9fc3ecf39e06.herokuapp.com/api/posts/");
       const data: Post[] = await response.json();
       const enrichedData = data.map((post) => ({
         ...post,
-        type: post.type || "question", 
+        type: post.type || "question",
       }));
       setPosts(enrichedData);
     } catch (error) {
@@ -63,17 +74,22 @@ const CommunityScreen = () => {
     }
   };
 
-  // Like a post
+
   const likePost = async (postId: string): Promise<void> => {
-    
     try {
       console.log(`Liking post with ID: ${postId}`);
       const url = `https://fitcom-9fc3ecf39e06.herokuapp.com/api/posts/${postId}/`;
 
+      const token = await getUserToken();
+      if (!token) {
+        Alert.alert("Error", "You need to be logged in to like a post.");
+        return;
+      }
+
       const getResponse = await fetch(url, {
         method: "GET",
         headers: {
-          Authorization: "Token 3d4df725723be3284834ebe1e280e7658c79648c",
+          Authorization: `Token ${token}`,
         },
       });
 
@@ -86,36 +102,23 @@ const CommunityScreen = () => {
       const postData = await getResponse.json();
       const newLikes = postData.likes + 1;
 
-      // Now, send a PATCH request to update the likes count
+
       const patchResponse = await fetch(url, {
         method: "PATCH",
         headers: {
-          Authorization: "Token 3d4df725723be3284834ebe1e280e7658c79648c",
+          Authorization: `Token ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ likes: newLikes }),
       });
 
-      if (patchResponse.ok) {
-        console.log("Successfully liked the post.");
-        const updatedPost = await patchResponse.json();
 
-        // Update the local state with the updated post data
-        setPosts((prevPosts) =>
-          prevPosts.map((post) => (post.post_id === postId ? updatedPost : post))
-        );
-      } else {
-        const errorText = await patchResponse.text();
-        console.error(`Error updating likes (status ${patchResponse.status}):`, errorText);
-        Alert.alert("Error", `Failed to like the post. Status: ${patchResponse.status}`);
-      }
     } catch (error) {
       console.error("Error liking post:", error);
       Alert.alert("Error", "An unexpected error occurred while liking the post.");
     }
   };
 
-  // Add a new post
   const addPost = async (): Promise<void> => {
     if (!newPostTitle.trim() || !newPostContent.trim()) {
       Alert.alert("Error", "Title and content cannot be empty.");
@@ -123,6 +126,12 @@ const CommunityScreen = () => {
     }
 
     try {
+      const token = await getUserToken();
+      if (!token) {
+        Alert.alert("Error", "You need to be logged in to create a post.");
+        return;
+      }
+
       const formData = new FormData();
       formData.append("title", newPostTitle);
       formData.append("content", newPostContent);
@@ -138,7 +147,8 @@ const CommunityScreen = () => {
       const response = await fetch("https://fitcom-9fc3ecf39e06.herokuapp.com/api/posts/", {
         method: "POST",
         headers: {
-          Authorization: "Token 3d4df725723be3284834ebe1e280e7658c79648c",
+          Authorization: `Token ${token}`,
+
         },
         body: formData,
       });
@@ -161,7 +171,7 @@ const CommunityScreen = () => {
     }
   };
 
-  // Filtered posts based on search term and filter type
+
   const filteredPosts = useMemo(() => {
     const filtered = posts.filter((post) => {
       const matchesSearchTerm =
@@ -170,20 +180,20 @@ const CommunityScreen = () => {
       const matchesFilterType = filterType === "all" || post.type === filterType;
       return matchesSearchTerm && matchesFilterType;
     });
-  
-    // Sort posts based on sortOrder
+
+
     const sorted = [...filtered].sort((a, b) => {
       if (sortOrder === "newest") {
-        return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(); // Newest first
+        return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
       } else if (sortOrder === "popular") {
-        return b.likes - a.likes; // Most popular first
+        return b.likes - a.likes;
       }
       return 0;
     });
-  
+
     return sorted;
   }, [posts, searchTerm, filterType, sortOrder]);
-  
+
   const renderPost = ({ item }: { item: Post }) => (
     <View style={styles.postCard}>
       <Text style={styles.postTitle}>{item.title}</Text>
@@ -200,12 +210,11 @@ const CommunityScreen = () => {
 
   return (
     <View style={styles.container}>
-      {/* Search Bar */}
       <View style={styles.searchBar}>
         <TextInput
           style={styles.searchInput}
           placeholder="Search for posts..."
-          placeholderTextColor="#000" 
+          placeholderTextColor="#000"
           value={searchTerm}
           onChangeText={setSearchTerm}
         />
@@ -224,12 +233,10 @@ const CommunityScreen = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Add Post Button */}
       <TouchableOpacity style={styles.addPostButton} onPress={() => setModalVisible(true)}>
         <Text style={styles.buttonText}>Add Post</Text>
       </TouchableOpacity>
-      
-      {/* Posts Section */}
+
       <FlatList
         data={filteredPosts}
         renderItem={renderPost}
@@ -237,7 +244,6 @@ const CommunityScreen = () => {
         contentContainerStyle={styles.postsContainer}
       />
 
-      {/* Create Post Modal */}
       <Modal visible={modalVisible} transparent={true} animationType="slide">
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
@@ -381,13 +387,13 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   activeSortButton: {
-    backgroundColor: "#007BFF", // Highlight the active button
+    backgroundColor: "#007BFF",
   },
   sortButtonText: {
     color: "#fff",
     fontWeight: "bold",
   },
-  
+
 });
 
 export default CommunityScreen;

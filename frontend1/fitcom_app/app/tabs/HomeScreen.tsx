@@ -47,14 +47,14 @@ const HomeScreen = () => {
     carbs: 0,
     protein: 0,
   });
-  
+
   const [nutrition, setNutrition] = useState({
     calories: 0,
     fat: 0,
     carbs: 0,
     protein: 0,
   });
-  
+
 
   useEffect(() => {
     const today = new Date();
@@ -67,7 +67,7 @@ const HomeScreen = () => {
       })
     );
   }, []);
-  
+
   const adjustWater = (amount: number) => {
     setWaterLevel((prev) => Math.max(0, Math.min(3000, prev + amount)));
   };
@@ -79,37 +79,69 @@ const HomeScreen = () => {
   const getProgressPercentage = (current: number, max: number | undefined) => {
     if (!max || max <= 0 || isNaN(current)) return 0;
     const percentage = (current / max) * 100;
-    return percentage > 100 ? 100 : percentage;    
+    return percentage > 100 ? 100 : percentage;
   };
-  
+
 
   const fetchWorkoutProgram = async () => {
     try {
-      const token = await AsyncStorage.getItem("authToken");
-      if (!token) {
-        Alert.alert("Error", "No token found.");
+      const token = await AsyncStorage.getItem("userToken");
+      const userId = await AsyncStorage.getItem("userId");
+      if (!token || !userId) {
+        Alert.alert("Error", "No token or user ID found. Please log in.");
         return;
       }
 
-      const response = await fetch(
-        "https://fitcom-9fc3ecf39e06.herokuapp.com/api/user-workout-program/",
+      const userResponse = await fetch(
+        `https://fitcom-9fc3ecf39e06.herokuapp.com/api/users/${userId}/`,
         {
+          method: "GET",
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Token ${token}`,
+            "Accept": "application/json",
+            "Content-Type": "application/json",
           },
         }
       );
 
-      if (response.ok) {
-        const data = await response.json();
-        setSelectedWorkout(data);
+      if (!userResponse.ok) {
+        const error = await userResponse.json();
+        Alert.alert("Error", error.detail || "Failed to fetch user data.");
+        return;
+      }
+
+      const userData = await userResponse.json();
+      const selectedWorkoutId = userData.selected_program_id;
+
+      if (!selectedWorkoutId) {
+        Alert.alert("Info", "No workout program selected for this user.");
+        return;
+      }
+
+
+      const workoutResponse = await fetch(
+        `https://fitcom-9fc3ecf39e06.herokuapp.com/api/user-custom-workout-programs/${selectedWorkoutId}/`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Token ${token}`,
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (workoutResponse.ok) {
+        const workoutData = await workoutResponse.json();
+        setSelectedWorkout(workoutData);
         setWorkoutModalVisible(true);
       } else {
-        const error = await response.json();
-        Alert.alert("Error", error.detail || "Failed to fetch workout program.");
+        const error = await workoutResponse.json();
+        Alert.alert("Error", error.detail || "Failed to fetch workout program details.");
       }
     } catch (error) {
-      Alert.alert("Error", "An unexpected error occurred.");
+      console.error("Error fetching workout program:", error);
+      Alert.alert("Error", "An unexpected error occurred while fetching the workout program.");
     }
   };
 
@@ -234,7 +266,7 @@ const HomeScreen = () => {
           },
         }
       );
-     
+
 
   console.log(`Response Headers: ${JSON.stringify(response.headers)}`);
       console.log(`token: ${token}`); console.log(`userId: ${userId}`);
@@ -246,16 +278,16 @@ const HomeScreen = () => {
           carbs: userData.carbs_needs || 0,
           protein: userData.protein_needs || 0,
         });
-        
+
 
 
         setNutrition({
-          calories: userData.caloriesGoal || 0, // Default to 0 if undefined
+          calories: userData.caloriesGoal || 0,
           fat: userData.fatGoal || 0,
           carbs: userData.carbsGoal || 0,
           protein: userData.proteinGoal || 0,
         });
-        
+
       } else {
         Alert.alert("Error", "Failed to fetch user data.");
       }
@@ -266,17 +298,17 @@ const HomeScreen = () => {
 
   const handleFoodSelection = async (item: any) => {
     console.log("Selected Food Item:", item);
-  
+
     const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     let nonce = "";
     for (let i = 0; i < 16; i++) {
       nonce += charset.charAt(Math.floor(Math.random() * charset.length));
     }
     const timestamp = Math.floor(Date.now() / 1000);
-  
+
     const consumerKey = "2e7307812ba443c0948b842ee0f23e21";
     const consumerSecret = "f076f0475ec3425c83630d5d3f1fa204";
-  
+
     const params: Record<string, string> = {
       method: "food.get",
       food_id: item.food_id,
@@ -287,46 +319,46 @@ const HomeScreen = () => {
       oauth_nonce: nonce,
       oauth_version: "1.0",
     };
-  
+
     const sortedParams = Object.keys(params)
       .sort()
       .map((key) => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
       .join("&");
-  
+
     const baseString = `GET&${encodeURIComponent(
       "https://platform.fatsecret.com/rest/server.api"
     )}&${encodeURIComponent(sortedParams)}`;
-  
+
     const signingKey = `${encodeURIComponent(consumerSecret)}&`;
     const oauthSignature = CryptoJS.HmacSHA1(baseString, signingKey).toString(CryptoJS.enc.Base64);
-  
+
     params.oauth_signature = oauthSignature;
-  
+
     const apiUrl = `https://platform.fatsecret.com/rest/server.api?${new URLSearchParams(params).toString()}`;
     const proxyUrl = `http://localhost:8092/proxy?url=${encodeURIComponent(apiUrl)}`;
-  
+
     try {
       const response = await fetch(proxyUrl);
       if (response.ok) {
         const result = await response.json();
         console.log("Full API Result:", result);
-  
+
         const servings = result.food?.servings?.serving;
-  
+
         if (!servings) {
           Alert.alert("Error", "No serving information found for this food.");
           return;
         }
-  
+
         // Handle both single and array cases
         const serving = Array.isArray(servings) ? servings[0] : servings;
-  
+
         // Parse and round values to 1 decimal place
         const calories = parseFloat(serving.calories || "0").toFixed(1);
         const fat = parseFloat(serving.fat || "0").toFixed(1);
         const carbs = parseFloat(serving.carbohydrate || "0").toFixed(1);
         const protein = parseFloat(serving.protein || "0").toFixed(1);
-  
+
         // Update nutrition state
         setNutrition((prevNutrition) => ({
           calories: Math.min(
@@ -346,18 +378,18 @@ const HomeScreen = () => {
             maxNutrition.protein || Infinity
           ),
         }));
-        
-        
-        
-        
-  
+
+
+
+
+
         console.log("Updated Nutrition:", {
           calories,
           fat,
           carbs,
           protein,
         });
-  
+
         Alert.alert(
           "Food Added",
           `${item.food_name} added! (${calories} cal, ${fat}g fat, ${carbs}g carbs, ${protein}g protein)`
@@ -372,14 +404,14 @@ const HomeScreen = () => {
       Alert.alert("Error", "An unexpected error occurred while fetching nutritional details.");
     }
   };
-  
+
     const addMealToProgress = () => {
       // Parse input values to numbers (default to 0 if invalid)
       const calories = parseFloat(meal.calories) || 0;
       const fat = parseFloat(meal.fat) || 0;
       const carbs = parseFloat(meal.carbs) || 0;
       const protein = parseFloat(meal.protein) || 0;
-    
+
       // Update the nutrition progress
       setNutrition((prevNutrition) => ({
         calories: Math.min(
@@ -399,15 +431,15 @@ const HomeScreen = () => {
           maxNutrition.protein || Infinity
         ),
       }));
-    
+
       // Clear input fields and close the modal
       setMeal({ calories: "", fat: "", carbs: "", protein: "" });
       setMealModalVisible(false);
-    
+
       // Notify the user
       Alert.alert("Meal Added", "Your meal has been added to today's progress!");
     };
-  
+
   return (
     <View style={styles.container}>
       {/* Date Section */}
@@ -884,7 +916,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 18,
   },closeButton: {
-    backgroundColor: "#FF6347", 
+    backgroundColor: "#FF6347",
   },
 
 });
