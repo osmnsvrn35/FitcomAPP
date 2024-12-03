@@ -7,6 +7,11 @@ from rest_framework.authtoken.models import Token
 from fitcom_app.models import WorkoutProgram
 from django.contrib.contenttypes.models import ContentType
 
+from rest_framework import serializers
+from rest_framework.validators import ValidationError
+from .models import User
+from rest_framework.authtoken.models import Token
+
 class RegisterSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(max_length=80)
     username = serializers.CharField(max_length=45)
@@ -27,10 +32,22 @@ class RegisterSerializer(serializers.ModelSerializer):
         if email_exists:
             raise ValidationError('Email already exists.')
 
-
-        if not attrs.get('is_staff', False):
+        # Ensure weight, height, gender, and userLevel are provided for non-admin users
+        if not attrs.get('is_staff', False):  # Assuming is_staff indicates admin status
             if not all([attrs.get('weight'), attrs.get('height'), attrs.get('gender'), attrs.get('userLevel')]):
                 raise ValidationError('Weight, height, gender, and user level are required for non-admin users.')
+
+        return attrs  # Ensure to return the validated data
+
+    def create(self, validated_data):
+        password = validated_data.pop('password')
+        user = super().create(validated_data)
+        user.set_password(password)
+        if not user.is_staff:  # Calculate needs only for non-admin users
+            user.calculate_needs()
+        user.save()
+        Token.objects.create(user=user)
+        return user
 
     def create(self, validated_data):
         password = validated_data.pop('password')
