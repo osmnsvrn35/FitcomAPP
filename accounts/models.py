@@ -28,9 +28,6 @@ class CustomUserManager(BaseUserManager):
 
 
 
-
-
-
 class User(AbstractUser):
     ACTIVITY_LEVEL_CHOICES = [
         ('Sedentary', 'Sedentary: little or no exercise'),

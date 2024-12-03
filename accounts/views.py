@@ -50,9 +50,12 @@ class LoginView(APIView):
         user = authenticate(email=email, password=password)
         if user is not None:
             token, created = Token.objects.get_or_create(user=user)
-            return Response({"message": "Login successful", "token": token.key}, status=status.HTTP_200_OK)
+            return Response({
+                "message": "Login successful",
+                "token": token.key,
+                "user_id": user.id  # Include the user ID in the response
+            }, status=status.HTTP_200_OK)
         return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
-
 
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
@@ -65,10 +68,13 @@ class LogoutView(APIView):
             return Response({"error": "Invalid token or user not authenticated"}, status=status.HTTP_400_BAD_REQUEST)
 
 
+
+
 class UserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all()
+    queryset = User.objects.all().order_by('id')
     serializer_class = UserSerializer
     permission_classes = [IsAdminUser]
+
 
 
 
