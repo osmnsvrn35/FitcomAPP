@@ -58,7 +58,7 @@ class UserCustomWorkoutProgramViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return UserCustomWorkoutProgram.objects.filter(user=self.request.user)
+        if getattr(self, 'swagger_fake_view', False): return UserCustomWorkoutProgram.objects.none()
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)

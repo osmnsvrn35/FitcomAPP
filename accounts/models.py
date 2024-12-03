@@ -10,6 +10,8 @@ from django.utils import timezone
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password, **extra_fields):
         email = self.normalize_email(email)
+        if not email:
+            raise ValueError('The Email field must be set')
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save()
@@ -25,6 +27,8 @@ class CustomUserManager(BaseUserManager):
             raise ValueError('Superuser must have is_superuser=True.')
 
         return self.create_user(email, password, **extra_fields)
+
+
 
 
 
@@ -46,10 +50,10 @@ class User(AbstractUser):
 
     email = models.EmailField(max_length=80, unique=True)
     username = models.CharField(max_length=45)
-    weigth = models.FloatField(blank=False)
+    weight = models.FloatField(blank=False)
     height = models.FloatField(blank=False)
     gender = models.CharField(max_length=20, choices=GENDER_CHOICES, blank=False)
-    userLevel = models.CharField(max_length=20, choices=ACTIVITY_LEVEL_CHOICES, blank=True, null=True)
+    userLevel = models.CharField(max_length=20, choices=ACTIVITY_LEVEL_CHOICES,blank=False)
     profilePicture = models.URLField(max_length=200, null=True, blank=True)
     age = models.PositiveIntegerField(null=True, blank=True)
     saved_workout_programs = models.ManyToManyField(UserCustomWorkoutProgram, blank=True, related_name='saved_by_users')

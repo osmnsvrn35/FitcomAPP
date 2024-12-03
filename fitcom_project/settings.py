@@ -76,10 +76,11 @@ AUTH_USER_MODEL = 'accounts.User'
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8081",
     "http://127.0.0.1:8081",
-    "http://fitcom-9fc3ecf39e06.herokuapp.com",
+    "https://fitcom-9fc3ecf39e06.herokuapp.com",
     'http://192.168.0.159:8081',
     'http://192.168.0.113:8081',
 ]
+
 CORS_ALLOWED_HOSTS = [
     "http://fitcom-9fc3ecf39e06.herokuapp.com",
     "fitcom-9fc3ecf39e06.herokuapp.com",
@@ -133,12 +134,11 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'koyebdb',
         'USER': 'koyeb-adm',
-        'PASSWORD': 'jUq9fyvSrIu7',
-        'HOST': 'ep-broad-butterfly-a20igjdz.eu-central-1.pg.koyeb.app',
+        'PASSWORD': '4b7VpEkyQSYn',
+        'HOST': 'ep-tiny-math-a2hg4lvz.eu-central-1.pg.koyeb.app',
         'OPTIONS': {'sslmode': 'require'},
     }
 }
-
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 

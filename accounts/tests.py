@@ -1,17 +1,23 @@
+from django.utils import timezone
 from django.test import TestCase
 from django.urls import reverse
+from jsonschema import ValidationError
 from rest_framework import status
 from rest_framework.test import APIClient,APITestCase
 from rest_framework.authtoken.models import Token
-
+from django.db import IntegrityError
+from django.contrib.contenttypes.models import ContentType
+from fitcom_app.models import UserCustomWorkoutProgram
 from .serializers import LoginSerializer
 from .models import User, DailyUserProgress
+from rest_framework.test import APITestCase
 
 
 ## User Model Unit Tests
 
 class UserModelTests(TestCase):
 
+    # Test creating a new user
     def test_create_user(self):
         user = User.objects.create_user(
             email='testuser@example.com',
@@ -37,9 +43,21 @@ class UserModelTests(TestCase):
             email='admin@example.com',
             username='admin',
             password='adminpassword123'
+
         )
         self.assertTrue(superuser.is_superuser)
         self.assertTrue(superuser.is_staff)
+
+    def test_duplicate_email(self):
+        User.objects.create_user(email='testuser@example.com', username='testuser1', password='testpassword123', weight=70.0, height=175.0, gender='male')
+        with self.assertRaises(IntegrityError):
+            User.objects.create_user(email='testuser@example.com', username='testuser2', password='testpassword123', weight=75.0, height=180.0, gender='male')
+
+
+    def test_password_hashing(self):
+        user = User.objects.create_user(email='testuser@example.com', username='testuser2', password='testpassword123', weight=75.0, height=180.0, gender='male')
+        self.assertNotEqual(user.password, 'testpassword123')
+        self.assertTrue(user.check_password('testpassword123'))
 
     def test_create_superuser(self):
         superuser = User.objects.create_superuser(
@@ -53,11 +71,34 @@ class UserModelTests(TestCase):
         self.assertTrue(superuser.is_superuser)
         self.assertTrue(superuser.is_staff)
 
+    def test_calculate_needs_variations(self):
+        user = User.objects.create_user(
+            email='testuser@example.com',
+            username='testuser',
+            password='testpassword123',
+            weight=70.0,
+            height=175.0,
+            gender='male',
+            userLevel='Moderate',
+            age=30
+        )
+        user.calculate_needs()
+        initial_kcal = user.kcal_needs
+
+        user.gender = 'female'
+        user.calculate_needs()
+        self.assertNotEqual(initial_kcal, user.kcal_needs)
+
+        user.userLevel = 'Very Active'
+        user.calculate_needs()
+        self.assertGreater(user.kcal_needs, initial_kcal)
+
+    # Test creating a user with an invalid email raises an error
     def test_user_without_email_raises_error(self):
         with self.assertRaises(ValueError):
             User.objects.create_user(email='', username='testuser', password='testpassword123', weight=70.0, height=175.0, gender='male')
 
-
+    #Testing updating a user's profile
     def test_update_user_profile(self):
         user = User.objects.create_user(
             email='test@example.com',
@@ -74,6 +115,7 @@ class UserModelTests(TestCase):
         self.assertEqual(updated_user.weight, 75.0)
         self.assertEqual(updated_user.height, 180.0)
 
+    #Test token creation for a user
     def test_user_token_creation(self):
         user = User.objects.create_user(
             email='test@example.com',
@@ -87,6 +129,7 @@ class UserModelTests(TestCase):
         self.assertIsNotNone(token)
         self.assertEqual(token.user, user)
 
+    #test retrieving a user's daily progress
     def test_calculate_needs(self):
         user = User.objects.create_user(
             email='testuser@example.com',
@@ -106,13 +149,8 @@ class UserModelTests(TestCase):
         self.assertTrue(30 < user.fat_needs < 120)
         self.assertTrue(1.5 < user.water_needs < 4)
 
-    def test_invalid_user_creation(self):
-        with self.assertRaises(ValueError):
-            User.objects.create_user(
-                email='',
-                username='testuser',
-                password='testpassword123'
-            )
+
+
 
     def test_user_str_representation(self):
         user = User.objects.create_user(
@@ -125,369 +163,365 @@ class UserModelTests(TestCase):
         )
         self.assertEqual(str(user), 'testuser')
 
-
-## DailyUserProgress Model Tests
-# class DailyUserProgressTests(TestCase):
-
-#     def setUp(self):
-#         self.user = User.objects.create_user(
-#             email="testuser@example.com",
-#             username="testuser",
-#             password="testpassword123",
-#             weight=70.0,
-#             height=175.0,
-#             gender="male",
-#             userLevel="Moderate",
-#             age=30
-#         )
-#         self.user.calculate_needs()
-
-#         self.daily_progress = DailyUserProgress.objects.create(
-#             user=self.user,
-#             date='2024-12-02',
-#             workout_completed=True,
-#             kcal_burned=500.0,
-#             kcal_consumed=2200.0,
-#             protein_consumed=130.0,
-#             carbs_consumed=300.0,
-#             fat_consumed=70.0,
-#             water_consumed=2.5
-#         )
-
-#     def test_daily_progress_creation(self):
-#         self.assertEqual(self.daily_progress.user, self.user)
-#         self.assertTrue(self.daily_progress.workout_completed)
-#         self.assertEqual(self.daily_progress.kcal_burned, 500.0)
-#         self.assertEqual(self.daily_progress.kcal_consumed, 2200.0)
-#         self.assertEqual(self.daily_progress.protein_consumed, 130.0)
-#         self.assertEqual(self.daily_progress.carbs_consumed, 300.0)
-#         self.assertEqual(self.daily_progress.fat_consumed, 70.0)
-#         self.assertEqual(self.daily_progress.water_consumed, 2.5)
-
-#     def test_get_progress_vs_needs(self):
-#         progress = self.daily_progress.get_progress_vs_needs()
-
-#         self.assertIn('kcal_diff', progress)
-#         self.assertIn('protein_diff', progress)
-#         self.assertIn('carbs_diff', progress)
-#         self.assertIn('fat_diff', progress)
-#         self.assertIn('water_diff', progress)
-
-#         self.assertEqual(progress['kcal_diff'], round(self.daily_progress.kcal_consumed - self.user.kcal_needs, 1))
-#         self.assertEqual(progress['protein_diff'], round(self.daily_progress.protein_consumed - self.user.protein_needs, 1))
-#         self.assertEqual(progress['carbs_diff'], round(self.daily_progress.carbs_consumed - self.user.carbs_needs, 1))
-#         self.assertEqual(progress['fat_diff'], round(self.daily_progress.fat_consumed - self.user.fat_needs, 1))
-#         self.assertEqual(progress['water_diff'], round(self.daily_progress.water_consumed - self.user.water_needs, 1))
-
-#     def test_daily_progress_str_representation(self):
-#         expected_str = f"{self.user.username}'s progress on 2024-12-02"
-#         self.assertEqual(str(self.daily_progress), expected_str)
-
-#     def test_daily_progress_ordering(self):
-#         DailyUserProgress.objects.create(
-#             user=self.user,
-#             date='2024-12-01',
-#             workout_completed=True
-#         )
-#         DailyUserProgress.objects.create(
-#             user=self.user,
-#             date='2024-12-03',
-#             workout_completed=True
-#         )
-
-#         progresses = DailyUserProgress.objects.all()
-#         self.assertEqual(progresses[0].date.strftime('%Y-%m-%d'), '2024-12-03')
-#         self.assertEqual(progresses[2].date.strftime('%Y-%m-%d'), '2024-12-01')
-
-## Login Unit tests
+    # Test many-to-many relationship with UserCustomWorkoutProgram
+    def test_saved_workout_programs(self):
+        user = User.objects.create_user(
+            email='testuser@example.com',
+            username='testuser',
+            password='testpassword123',
+            weight=70.0,
+            height=175.0,
+            gender='male'
+        )
+        program = UserCustomWorkoutProgram.objects.create(
+            name='Program 1',
+            user=user
+        )
+        user.saved_workout_programs.add(program)
+        self.assertIn(program, user.saved_workout_programs.all())
 
 
-# class LoginSerializerTests(TestCase):
+    def test_generic_foreign_key(self):
+            user = User.objects.create_user(
+                email='testuser@example.com',
+                username='testuser',
+                password='testpassword123',
+                weight=70.0,
+                height=175.0,
+                gender='male'
+            )
+            content_type = ContentType.objects.get_for_model(UserCustomWorkoutProgram)
 
-#     def test_valid_data(self):
-#         data = {'email': 'user@example.com', 'password': 'password123'}
-#         serializer = LoginSerializer(data=data)
-#         self.assertTrue(serializer.is_valid(), "Serializer should be valid with correct data")
-#         self.assertEqual(serializer.validated_data, data, "Validated data should match the input data")
+            program = UserCustomWorkoutProgram.objects.create(
+                name='Program 1',
+                # Ensure the program is associated with the user
+                user=user
+            )
+            user.selected_program_type = content_type
+             # Use the correct field for the ID
+            user.selected_program_id = program.program_id
+            user.save()
+            self.assertEqual(user.selected_workout_program, program)
 
-#     def test_missing_email(self):
-#         data = {'password': 'password123'}
-#         serializer = LoginSerializer(data=data)
-#         self.assertFalse(serializer.is_valid(), "Serializer should be invalid if email is missing")
-#         self.assertIn('email', serializer.errors, "Errors should contain 'email' field")
+class UserAPITests(APITestCase):
 
-#     def test_missing_password(self):
-#         data = {'email': 'user@example.com'}
-#         serializer = LoginSerializer(data=data)
-#         self.assertFalse(serializer.is_valid(), "Serializer should be invalid if password is missing")
-#         self.assertIn('password', serializer.errors, "Errors should contain 'password' field")
+        def setUp(self):
 
-#     def test_invalid_email_format(self):
-#         data = {'email': 'userexample.com', 'password': 'password123'}
-#         serializer = LoginSerializer(data=data)
-#         self.assertFalse(serializer.is_valid(), "Serializer should be invalid if email format is incorrect")
-#         self.assertIn('email', serializer.errors, "Errors should contain 'email' field")
-
-
-# class LoginViewTests(APITestCase):
-
-#     def setUp(self):
-#         self.user = User.objects.create_user(
-#             email='user@example.com',
-#             username='user',
-#             password='password123',
-#             weight=70.0,
-#             height=175.0,
-#             gender='male',
-#             userLevel='Moderate',
-#             age=30
-#         )
-#         self.url = reverse('auth_login')
-
-#     def test_login_success(self):
-#         data = {'email': self.user.email, 'password': 'password123'}
-#         response = self.client.post(self.url, data, format='json')
-#         self.assertEqual(response.status_code, status.HTTP_200_OK, "Should return 200 OK on successful login")
-#         self.assertIn('token', response.data, "Response should include a token")
-#         self.assertTrue(Token.objects.filter(key=response.data['token']).exists(), "Token should exist in the database")
-
-#     def test_login_invalid_credentials(self):
-#         data = {'email': self.user.email, 'password': 'wrongpassword'}
-#         response = self.client.post(self.url, data, format='json')
-#         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED, "Should return 401 Unauthorized for invalid credentials")
-#         self.assertIn('error', response.data, "Response should include an error message")
-
-#     def test_login_missing_email(self):
-#         data = {'password': 'password123'}
-#         response = self.client.post(self.url, data, format='json')
-#         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, "Should return 400 Bad Request if email is missing")
-#         self.assertIn('email', response.data, "Response should include an email error message")
-
-#     def test_login_missing_password(self):
-#         data = {'email': 'user@example.com'}
-#         response = self.client.post(self.url, data, format='json')
-#         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, "Should return 400 Bad Request if password is missing")
-#         self.assertIn('password', response.data, "Response should include a password error message")
+            self.user = User.objects.create_user(
+                email='testuser@example.com',
+                username='testuser',
+                password='testpassword123',
+                weight=70.0,
+                height=175.0,
+                gender='male'
+            )
+            self.user_token = Token.objects.create(user=self.user)
 
 
+            self.admin_user = User.objects.create_superuser(
+                email='admin@example.com',
+                username='admin',
+                password='adminpassword123',
+                weight=70.0,
+                height=175.0,
+                gender='male'
+            )
+            self.admin_token = Token.objects.create(user=self.admin_user)
 
-# class DailyUserProgressTests(TestCase):
+        #Testing if user will be while user get is only admin authenticated
+        def test_user_list_as_normal_user(self):
+            self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.user_token.key)
+            url = reverse('user-list')
+            response = self.client.get(url, format='json')
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    # def setUp(self):
-    #     self.user = User.objects.create(
-    #         email="testuser@example.com",
-    #         username="testuser",
-    #         weight=70.0,
-    #         height=175.0,
-    #         gender="male",
-    #         userLevel="Moderate",
-    #         age=30
-    #     )
-    #     self.user.calculate_needs()
+        def test_user_list_as_admin(self):
+            self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.admin_token.key)
+            url = reverse('user-list')
+            response = self.client.get(url, format='json')
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertGreaterEqual(len(response.data), 1)
 
-    #     self.daily_progress = DailyUserProgress.objects.create(
-    #         user=self.user,
-    #         date='2024-12-02',
-    #         workout_completed=True,
-    #         kcal_burned=500.0,
-    #         kcal_consumed=2200.0,
-    #         protein_consumed=130.0,
-    #         carbs_consumed=300.0,
-    #         fat_consumed=70.0,
-    #         water_consumed=2.5
-    #     )
+        def test_user_detail_as_normal_user(self):
+            # Authenticate as a normal user
+            self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.user_token.key)
+            url = reverse('user-detail', args=[self.user.id])
+            response = self.client.get(url, format='json')
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertEqual(response.data['email'], 'testuser@example.com')
 
-    # def test_daily_progress_creation(self):
-    #     self.assertEqual(self.daily_progress.user, self.user, "The user linked to DailyUserProgress should be correct")
-    #     self.assertTrue(self.daily_progress.workout_completed, "Workout should be marked as completed")
-    #     self.assertEqual(self.daily_progress.kcal_burned, 500.0, "Calories burned should match")
-    #     self.assertEqual(self.daily_progress.kcal_consumed, 2200.0, "Calories consumed should match")
-    #     self.assertEqual(self.daily_progress.protein_consumed, 130.0, "Protein consumed should match")
-    #     self.assertEqual(self.daily_progress.carbs_consumed, 300.0, "Carbohydrates consumed should match")
-    #     self.assertEqual(self.daily_progress.fat_consumed, 70.0, "Fat consumed should match")
-    #     self.assertEqual(self.daily_progress.water_consumed, 2.5, "Water consumed should match")
+        def test_user_detail_as_other_user(self):
+            other_user = User.objects.create_user(
+                email='otheruser@example.com',
+                username='otheruser',
+                password='otherpassword123',
+                weight=70.0,
+                height=175.0,
+                gender='male'
+            )
+            other_user_token = Token.objects.create(user=other_user)
+            self.client.credentials(HTTP_AUTHORIZATION='Token ' + other_user_token.key)
+            url = reverse('user-detail', args=[self.user.id])
+            response = self.client.get(url, format='json')
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    # def test_unique_together_constraint(self):
-    #     with self.assertRaises(Exception, msg="Creating a DailyUserProgress with the same user and date should raise an Exception"):
-    #         DailyUserProgress.objects.create(
-    #             user=self.user,
-    #             date='2024-12-02',
-    #             workout_completed=False
-    #         )
+        def test_user_me_endpoint_as_normal_user(self):
+            # Authenticate as a normal user
+            self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.user_token.key)
+            url = reverse('user-me')
+            response = self.client.get(url, format='json')
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertEqual(response.data['email'], 'testuser@example.com')
 
-    # def test_get_progress_vs_needs(self):
-    #     progress = self.daily_progress.get_progress_vs_needs()
+class AuthTests(APITestCase):
 
-    #     expected_kcal_diff = round(self.daily_progress.kcal_consumed - self.user.kcal_needs, 1)
-    #     expected_protein_diff = round(self.daily_progress.protein_consumed - self.user.protein_needs, 1)
-    #     expected_carbs_diff = round(self.daily_progress.carbs_consumed - self.user.carbs_needs, 1)
-    #     expected_fat_diff = round(self.daily_progress.fat_consumed - self.user.fat_needs, 1)
-    #     expected_water_diff = round(self.daily_progress.water_consumed - self.user.water_needs, 1)
+    def setUp(self):
+        # Create a test user
+        self.user = User.objects.create_user(
+            email='kinqomsan@example.com',
+            username='testuser',
+            password='testpassword123',
+            weight=70.0,
+            height=175.0,
+            gender='male',
+            age = 35,
+            userLevel='Moderate'
+        )
+        self.token = Token.objects.create(user=self.user)
 
-    #     self.assertEqual(progress['kcal_diff'], expected_kcal_diff, "Calories difference should match the expected value")
-    #     self.assertEqual(progress['protein_diff'], expected_protein_diff, "Protein difference should match the expected value")
-    #     self.assertEqual(progress['carbs_diff'], expected_carbs_diff, "Carbohydrates difference should match the expected value")
-    #     self.assertEqual(progress['fat_diff'], expected_fat_diff, "Fat difference should match the expected value")
-    #     self.assertEqual(progress['water_diff'], expected_water_diff, "Water difference should match the expected value")
+    def test_register_user(self):
+        url = reverse('auth_register')
+        data = {
+            'email': 'newuser@example.com',
+            'username': 'newuser',
+            'password': 'newpassword123',
+            'age':35,
+            'weight': 70.0,
+            'height': 175.0,
+            'gender': 'male',
+            'userLevel': 'Moderate'
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(User.objects.count(), 2)
+        self.assertEqual(User.objects.get(email='newuser@example.com').username, 'newuser')
 
-    # def test_ordering_by_date(self):
-    #     progress_older = DailyUserProgress.objects.create(
-    #         user=self.user,
-    #         date='2024-12-01',
-    #         workout_completed=True,
-    #         kcal_burned=400.0,
-    #         kcal_consumed=2100.0,
-    #         protein_consumed=120.0,
-    #         carbs_consumed=280.0,
-    #         fat_consumed=65.0,
-    #         water_consumed=2.2
-    #     )
-    #     progress_newer = DailyUserProgress.objects.create(
-    #         user=self.user,
-    #         date='2024-12-03',
-    #         workout_completed=True,
-    #         kcal_burned=550.0,
-    #         kcal_consumed=2300.0,
-    #         protein_consumed=140.0,
-    #         carbs_consumed=320.0,
-    #         fat_consumed=75.0,
-    #         water_consumed=2.7
-    #     )
-    #     progresses = DailyUserProgress.objects.all()
-    #     self.assertEqual(progresses[0], progress_newer, "Latest progress entry should be first")
-    #     self.assertEqual(progresses[1], self.daily_progress, "Current progress entry should be second")
-    #     self.assertEqual(progresses[2], progress_older, "Oldest progress entry should be last")
+    def test_register_user_with_existing_email(self):
+        url = reverse('auth_register')
+        data = {
+            'email': 'kinqomsan@example.com',
+            'username': 'newuser',
+            'password': 'newpassword123',
+            'age': 35,
+            'weight': 70.0,
+            'height': 175.0,
+            'gender': 'male',
+            'userLevel': 'Moderate'
+        }
+        response = self.client.post(url, data, format='json')
 
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('errors', response.data)
+        self.assertIn('Email already exists.', [str(error) for error in response.data['errors']])
 
-# class AuthTests(TestCase):
+    def test_register_user_with_invalid_data(self):
+        url = reverse('auth_register')
+        data = {
+            'email': 'invalidemail',
+            'username': 'newuser',
+            'password': 'short',
+            'age':35,
+            'weight': 'not_a_number',
+            'height': 175.0,
+            'gender': 'unknown',
+            'userLevel': 'Moderate'
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('Enter a valid email address.', response.data['email'])
+        self.assertIn('Ensure this field has at least 8 characters.', response.data['password'])
+        self.assertIn('A valid number is required.', response.data['weight'])
+        self.assertIn('"unknown" is not a valid choice.', response.data['gender'])
 
-#     def setUp(self):
-#         self.client = APIClient()
-#         self.register_url = reverse('auth_register')
-#         self.login_url = reverse('auth_login')
-#         self.logout_url = reverse('logout')
+    def test_login_user(self):
+        url = reverse('auth_login')
+        data = {
+            'email': 'kinqomsan@example.com',  # Corrected email
+            'password': 'testpassword123'
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('token', response.data)
+        self.assertEqual(response.data['user_id'], self.user.id)
 
-#         self.user_data = {
-#             'email': 'testuser@example.com',
-#             'username': 'testuser',
-#             'password': 'testpassword123',
-#             'weight': 70.0,
-#             'height': 175.0,
-#             'gender': 'male',
-#             'userLevel': 'Moderate',
-#             'age': 30
-#         }
+    def test_login_user_with_wrong_password(self):
+        url = reverse('auth_login')
+        data = {
+            'email': 'osmankinq@example.com',
+            'password': 'wrongpassword'
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertIn('Invalid credentials', response.data['error'])
 
-#         self.existing_user = User.objects.create_user(
-#             email='existinguser@example.com',
-#             username='existinguser',
-#             password='testpassword123',
-#             weight=70.0,
-#             height=175.0,
-#             gender='male',
-#             userLevel='Moderate',
-#             age=30
-#         )
+    def test_login_user_with_nonexistent_email(self):
+        url = reverse('auth_login')
+        data = {
+            'email': 'nonexistentcec@example.com',
+            'password': 'somepassword'
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertIn('Invalid credentials', response.data['error'])
 
-#     def test_register(self):
-#         new_user_data = self.user_data.copy()
-#         new_user_data['email'] = 'newuser@example.com'
-#         response = self.client.post(self.register_url, new_user_data, format='json')
-#         print(response.data)
-#         self.assertEqual(response.status_code, status.HTTP_201_CREATED, "User should be registered successfully")
-#         self.assertEqual(User.objects.count(), 2, "There should be two users in the database")
+    def test_logout_user(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
+        url = reverse('logout')
+        response = self.client.post(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('Logout successful', response.data['message'])
 
-#     def test_login(self):
-#         response = self.client.post(self.login_url, {
-#             'email': self.existing_user.email,
-#             'password': 'testpassword123'
-#         }, format='json')
-#         print(response.data)
-#         self.assertEqual(response.status_code, status.HTTP_200_OK, "User should be able to log in with correct credentials")
-#         self.assertIn('token', response.data, "Response should include a token")
+    def test_logout_user_without_token(self):
+        url = reverse('logout')
+        response = self.client.post(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertIn('detail', response.data)
+        self.assertEqual(response.data['detail'], 'Authentication credentials were not provided.')
 
-#     def test_logout(self):
-#         response = self.client.post(self.login_url, {
-#             'email': self.existing_user.email,
-#             'password': 'testpassword123'
-#         }, format='json')
-#         print(response.data)
-#         self.assertIn('token', response.data, "Login response should include a token")
-#         token = response.data['token']
-#         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token)
-#         response = self.client.post(self.logout_url)
-#         self.assertEqual(response.status_code, status.HTTP_200_OK, "User should be able to log out successfully")
-#         self.assertFalse(Token.objects.filter(key=token).exists(), "Token should be deleted after logout")
-
-
-# class UserViewSetTests(TestCase):
-
-#     def setUp(self):
-#         self.client = APIClient()
-#         self.user = User.objects.create_superuser(
-#             email='admin@example.com',
-#             username='admin',
-#             password='adminpassword',
-#             weight=70.0,
-#             height=175.0,
-#             gender='male',
-#             userLevel='Moderate',
-#             age=30
-#         )
-#         self.token = Token.objects.create(user=self.user)
-#         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
-#         self.user_url = '/api/users/'
-#         self.user_detail_url = lambda pk: f'/api/users/{pk}/'
-
-#     def test_get_user_list(self):
-#         response = self.client.get(self.user_url)
-#         self.assertEqual(response.status_code, status.HTTP_200_OK, "Admin should be able to get the user list")
-#         self.assertIsInstance(response.data, list, "Response should be a list")
-#         self.assertGreater(len(response.data), 0, "Response list should contain users")
-
-
-#     def test_get_user_detail(self):
-#         response = self.client.get(self.user_detail_url(self.user.pk))
-#         self.assertEqual(response.status_code, status.HTTP_200_OK, "Admin should be able to get user details")
-#         self.assertEqual(response.data['email'], self.user.email, "User email should match")
-
-#     def test_create_user(self):
-#         user_data = {
-#             'email': 'newuser2@example.com',
-#             'username': 'newuser2',
-#             'password': 'newpassword123',
-#             'weight': 70.0,
-#             'height': 175.0,
-#             'gender': 'male',
-#             'userLevel': 'Moderate',
-#             'age': 30
-#         }
-#         response = self.client.post(self.user_url, user_data, format='json')
-#         self.assertEqual(response.status_code, status.HTTP_201_CREATED, "Admin should be able to create a new user")
-#         self.assertIn('id', response.data, "Response should contain the user's ID")
-
-#     def test_update_user(self):
-#         user_data = {
-#             'email': 'updateduser@example.com',
-#             'username': 'updateduser',
-#             'password': 'newpassword123',
-#             'weight': 75.0,
-#             'height': 180.0,
-#             'gender': 'male',
-#             'userLevel': 'Active',
-#             'age': 31
-#         }
-#         response = self.client.put(self.user_detail_url(self.user.pk), user_data, format='json')
-#         print(response.data)
-#         self.assertEqual(response.status_code, status.HTTP_200_OK, "Admin should be able to update user details")
-#         self.assertEqual(response.data['email'], user_data['email'], "Updated email should match the new value")
+    def test_logout_user_with_invalid_token(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + 'invalidtoken')
+        url = reverse('logout')
+        response = self.client.post(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertIn('detail', response.data)
+        self.assertEqual(response.data['detail'], 'Invalid token.')
 
 
-#     def test_delete_user(self):
-#         response = self.client.delete(self.user_detail_url(self.user.pk))
-#         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT, "Admin should be able to delete a user")
-#         self.assertFalse(User.objects.filter(pk=self.user.pk).exists(), "User should be deleted from the database")
+class DailyUserProgressModelTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email='testuser@example.com',
+            username='testuser',
+            password='testpassword123',
+            weight=70.0,
+            height=175.0,
+            gender='male',
+            age=30,
+            userLevel='Moderate'
+        )
 
+    def test_create_daily_user_progress(self):
+        progress = DailyUserProgress.objects.create(
+            user=self.user,
+            date=timezone.now().date(),
+            workout_completed=True,
+            kcal_burned=500.0,
+            kcal_consumed=2000.0,
+            protein_consumed=150.0,
+            carbs_consumed=250.0,
+            fat_consumed=70.0,
+            water_consumed=2.0
+        )
+        self.assertEqual(progress.user, self.user)
+        self.assertTrue(progress.workout_completed)
+        self.assertEqual(progress.kcal_burned, 500.0)
+
+    def test_get_progress_vs_needs(self):
+        progress = DailyUserProgress.objects.create(
+            user=self.user,
+            date=timezone.now().date(),
+            kcal_consumed=2000.0,
+            protein_consumed=150.0,
+            carbs_consumed=250.0,
+            fat_consumed=70.0,
+            water_consumed=2.0
+        )
+        progress_vs_needs = progress.get_progress_vs_needs()
+        self.assertIn('kcal_diff', progress_vs_needs)
+        self.assertIn('protein_diff', progress_vs_needs)
+
+    def test_unique_together_constraint(self):
+        DailyUserProgress.objects.create(
+            user=self.user,
+            date=timezone.now().date()
+        )
+        with self.assertRaises(IntegrityError):
+            DailyUserProgress.objects.create(
+                user=self.user,
+                date=timezone.now().date()
+            )
+
+    def test_string_representation(self):
+        progress = DailyUserProgress.objects.create(
+            user=self.user,
+            date=timezone.now().date()
+        )
+        self.assertEqual(str(progress), f"{self.user.username} - {progress.date}")
+
+
+class DailyUserProgressViewSetTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email='testuser@example.com',
+            username='testuser',
+            password='testpassword123',
+            weight=70.0,
+            height=175.0,
+            gender='male',
+            age=30,
+            userLevel='Moderate'
+        )
+        self.token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
+
+    def test_create_daily_user_progress(self):
+        url = reverse('dailyuserprogress-list')
+        data = {
+            'user': self.user.username,
+            'date': timezone.now().date(),
+            'workout_completed': True,
+            'kcal_burned': 500.0,
+            'kcal_consumed': 2000.0,
+            'protein_consumed': 150.0,
+            'carbs_consumed': 250.0,
+            'fat_consumed': 70.0,
+            'water_consumed': 2.0
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(DailyUserProgress.objects.count(), 1)
+
+    def test_retrieve_daily_user_progress(self):
+        progress = DailyUserProgress.objects.create(
+            user=self.user,
+            date=timezone.now().date(),
+            kcal_consumed=2000.0
+        )
+        url = reverse('dailyuserprogress-detail', args=[progress.id])
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['kcal_consumed'], 2000.0)
+
+    def test_create_progress_without_authentication(self):
+        self.client.credentials()
+        url = reverse('dailyuserprogress-list')
+        data = {
+            'user': self.user.username,
+            'date': timezone.now().date(),
+            'kcal_consumed': 2000.0
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_create_progress_with_invalid_data(self):
+        url = reverse('dailyuserprogress-list')
+        data = {
+            'user': self.user.username,
+            'date': 'invalid-date',
+            'kcal_consumed': 'not-a-number'
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 if __name__ == "__main__":
     TestCase.main()

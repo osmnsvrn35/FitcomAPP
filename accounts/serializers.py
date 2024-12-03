@@ -14,7 +14,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     weight = serializers.FloatField(required=True)
     height = serializers.FloatField(required=True)
     gender = serializers.ChoiceField(choices=User.GENDER_CHOICES, required=True)
-    userLevel = serializers.ChoiceField(choices=User.ACTIVITY_LEVEL_CHOICES, required=False)
+    userLevel = serializers.ChoiceField(choices=User.ACTIVITY_LEVEL_CHOICES, required=True)
     profilePicture = serializers.URLField(required=False)
     age = serializers.IntegerField(required=False)
 
