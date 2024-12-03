@@ -238,12 +238,14 @@ const FitnessScreen: React.FC = () => {
             <TextInput
               style={styles.modalInput}
               placeholder="Program Name"
+              
               value={programName}
               onChangeText={setProgramName}
             />
             <TextInput
               style={[styles.modalInput, styles.modalTextarea]}
               placeholder="Program Description"
+              placeholderTextColor="#000"
               value={programDescription}
               onChangeText={setProgramDescription}
               multiline
@@ -432,7 +434,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
+  pickerWrapper:{
 
+  }
 });
 
 export default FitnessScreen;

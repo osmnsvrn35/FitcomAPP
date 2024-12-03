@@ -38,6 +38,7 @@
     "expo-location": "~18.0.2",
     "expo-media-library": "~17.0.3",
     "expo-router": "^3.5.24",
+    "expo-secure-store": "~14.0.0",
     "expo-splash-screen": "~0.29.13",
     "expo-status-bar": "~2.0.0",
     "expo-system-ui": "~4.0.4",
@@ -59,8 +60,7 @@
     "react-native-screens": "~4.1.0",
     "react-native-tab-view": "^4.0.5",
     "react-native-vector-icons": "^10.2.0",
-    "react-native-web": "~0.19.10",
-    "expo-secure-store": "~14.0.0"
+    "react-native-web": "~0.19.10"
   },
   "devDependencies": {
     "@babel/core": "^7.26.0",

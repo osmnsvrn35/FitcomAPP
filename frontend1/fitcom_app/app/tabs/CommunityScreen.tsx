@@ -42,6 +42,7 @@ const CommunityScreen = () => {
   const [filterType, setFilterType] = useState<"all" | "recipe" | "question">("all");
   const [sortOrder, setSortOrder] = useState<"newest" | "popular">("newest");
 
+
   useEffect(() => {
     fetchPosts();
   }, []);
@@ -71,7 +72,7 @@ const CommunityScreen = () => {
       const getResponse = await fetch(url, {
         method: "GET",
         headers: {
-          Authorization: "Token a5b92d9b5c9607bfc14429c069da60f2321e4b67",
+          Authorization: "Token 3d4df725723be3284834ebe1e280e7658c79648c",
         },
       });
 
@@ -88,7 +89,7 @@ const CommunityScreen = () => {
       const patchResponse = await fetch(url, {
         method: "PATCH",
         headers: {
-          Authorization: "Token a5b92d9b5c9607bfc14429c069da60f2321e4b67",
+          Authorization: "Token 3d4df725723be3284834ebe1e280e7658c79648c",
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ likes: newLikes }),
@@ -136,7 +137,7 @@ const CommunityScreen = () => {
       const response = await fetch("https://fitcom-9fc3ecf39e06.herokuapp.com/api/posts/", {
         method: "POST",
         headers: {
-          Authorization: "Token a5b92d9b5c9607bfc14429c069da60f2321e4b67",
+          Authorization: "Token 3d4df725723be3284834ebe1e280e7658c79648c",
         },
         body: formData,
       });
@@ -161,15 +162,27 @@ const CommunityScreen = () => {
 
   // Filtered posts based on search term and filter type
   const filteredPosts = useMemo(() => {
-    return posts.filter((post) => {
+    const filtered = posts.filter((post) => {
       const matchesSearchTerm =
         post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         post.content.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesFilterType = filterType === "all" || post.type === filterType;
       return matchesSearchTerm && matchesFilterType;
     });
-  }, [posts, searchTerm, filterType]);
-
+  
+    // Sort posts based on sortOrder
+    const sorted = [...filtered].sort((a, b) => {
+      if (sortOrder === "newest") {
+        return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(); // Newest first
+      } else if (sortOrder === "popular") {
+        return b.likes - a.likes; // Most popular first
+      }
+      return 0;
+    });
+  
+    return sorted;
+  }, [posts, searchTerm, filterType, sortOrder]);
+  
   const renderPost = ({ item }: { item: Post }) => (
     <View style={styles.postCard}>
       <Text style={styles.postTitle}>{item.title}</Text>
@@ -195,8 +208,18 @@ const CommunityScreen = () => {
           value={searchTerm}
           onChangeText={setSearchTerm}
         />
-        <TouchableOpacity style={styles.filterButton} onPress={() => setModalVisible(true)}>
-          <Text style={styles.buttonText}>Filter</Text>
+        <TouchableOpacity
+          style={[styles.sortButton, sortOrder === "newest" && styles.activeSortButton]}
+          onPress={() => setSortOrder("newest")}
+        >
+          <Text style={styles.sortButtonText}>Newest</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.sortButton, sortOrder === "popular" && styles.activeSortButton]}
+          onPress={() => setSortOrder("popular")}
+        >
+          <Text style={styles.sortButtonText}>Popular</Text>
         </TouchableOpacity>
       </View>
 
@@ -204,7 +227,7 @@ const CommunityScreen = () => {
       <TouchableOpacity style={styles.addPostButton} onPress={() => setModalVisible(true)}>
         <Text style={styles.buttonText}>Add Post</Text>
       </TouchableOpacity>
-
+      
       {/* Posts Section */}
       <FlatList
         data={filteredPosts}
@@ -349,6 +372,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginBottom: 10,
   },
+  sortButton: {
+    backgroundColor: "#ccc",
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    marginLeft: 10,
+  },
+  activeSortButton: {
+    backgroundColor: "#007BFF", // Highlight the active button
+  },
+  sortButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+  
 });
 
 export default CommunityScreen;

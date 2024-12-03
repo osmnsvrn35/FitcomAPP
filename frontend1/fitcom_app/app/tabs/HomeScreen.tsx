@@ -219,7 +219,7 @@ const HomeScreen = () => {
       }
 
       const response = await fetch(
-        `https://fitcom-9fc3ecf39e06.herokuapp.com/api/users/${userId}`,
+        `https://fitcom-9fc3ecf39e06.herokuapp.com/api/users/${userId}/`,
         {
           method: "GET",
           headers: {
@@ -229,6 +229,7 @@ const HomeScreen = () => {
           },
         }
       );
+     
 
   console.log(`Response Headers: ${JSON.stringify(response.headers)}`);
       console.log(`token: ${token}`); console.log(`userId: ${userId}`);
@@ -359,8 +360,6 @@ const HomeScreen = () => {
     }
   };
 
-
-
   return (
     <View style={styles.container}>
       {/* Date Section */}
@@ -375,29 +374,32 @@ const HomeScreen = () => {
       </View>
 
       {/* Nutritional Progress Section */}
-      <View style={styles.progressSection}>
-        {Object.keys(nutrition).map((key) => (
-          <View key={key} style={styles.nutritionItem}>
-            <Text>
-              {key.charAt(0).toUpperCase() + key.slice(1)}:{" "}
-              {nutrition[key as keyof typeof nutrition].toFixed(1)} / {maxNutrition[key as keyof typeof maxNutrition] || 'N/A'}
-            </Text>
-            <View style={styles.progressBar}>
-              <View
-                style={[
-                  styles.progressFill,
-                  {
-                    width: `${getProgressPercentage(
-                      nutrition[key as keyof typeof nutrition],
-                      maxNutrition[key as keyof typeof maxNutrition]
-                    )}%`,
-                  },
-                ]}
-              />
-            </View>
-          </View>
-        ))}
-      </View>
+        <View style={styles.progressSection}>
+          {Object.keys(nutrition).map((key) => {
+            // Safely get the current and max values
+            const currentValue = nutrition[key as keyof typeof nutrition] || 0; // Default to 0
+            const maxValue = maxNutrition[key as keyof typeof maxNutrition] || 0; // Default to 0
+
+            return (
+              <View key={key} style={styles.nutritionItem}>
+                <Text>
+                  {key.charAt(0).toUpperCase() + key.slice(1)}: {currentValue.toFixed(1)} /{" "}
+                  {maxValue ? maxValue.toFixed(1) : "N/A"}
+                </Text>
+                <View style={styles.progressBar}>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      {
+                        width: `${getProgressPercentage(currentValue, maxValue)}%`,
+                      },
+                    ]}
+                  />
+                </View>
+              </View>
+            );
+          })}
+        </View>
 
 
 
