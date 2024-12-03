@@ -82,13 +82,13 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOWED_HOSTS = [
     "http://fitcom-9fc3ecf39e06.herokuapp.com",
     "fitcom-9fc3ecf39e06.herokuapp.com",
-    "localhost"
+    "localhost",
+    'http://192.168.0.159:8081',
 
 ]
 CORS_ALLOW_HEADERS = [ "accept", "referer", "accept-encoding", "authorization", "content-type", "dnt", "origin", "user-agent", "x-csrftoken", "x-requested-with" ]
 CORS_EXPOSE_HEADERS = ['Set-Cookie']
-CORS_ORIGIN_ALLOW_ALL = True
-
+CORS_ORIGIN_ALLOW_ALL = False
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
