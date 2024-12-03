@@ -11,20 +11,19 @@
       "image": "./assets/images/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
-
-      
     },
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-      "NSCameraUsageDescription": "This app requires access to the camera to scan food.",
-      "NSMicrophoneUsageDescription": "This app requires access to the microphone for audio recording."
-
-    }
-      
+        "NSCameraUsageDescription": "This app requires access to the camera to scan food.",
+        "NSMicrophoneUsageDescription": "This app requires access to the microphone for audio recording."
+      }
     },
     "android": {
-      "permissions": ["CAMERA", "RECORD_AUDIO"],
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO"
+      ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -45,7 +44,8 @@
         }
       ],
       "expo-router",
-      "expo-font"
+      "expo-font",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true

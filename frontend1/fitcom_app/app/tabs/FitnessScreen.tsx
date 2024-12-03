@@ -26,6 +26,7 @@ interface Exercise {
   secondary_muscles?: string;
   instructions?: string;
 }
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const FitnessScreen: React.FC = () => {
   const [exercises, setExercises] = useState<Exercise[]>([]);
@@ -39,13 +40,22 @@ const FitnessScreen: React.FC = () => {
 
   const fetchExercises = async () => {
     try {
+      const token = await AsyncStorage.getItem('userToken');
+
+      if (!token) {
+        Alert.alert("Error", "You are not logged in. Please log in to view exercises.");
+        return;
+      }
+
       const response = await fetch(
         "https://fitcom-9fc3ecf39e06.herokuapp.com/api/exercises/",
         {
           method: "GET",
           headers: {
-            Authorization: "Token 5b38507fc66b3647a75e892259766c75f3f6742f",
-            Accept: "application/json",
+
+            Authorization: `Token ${token}`,
+            "Accept": "application/json",
+
             "Content-Type": "application/json",
           },
         }
@@ -60,6 +70,7 @@ const FitnessScreen: React.FC = () => {
       setFilteredExercises(data);
     } catch (error) {
       console.error("Error fetching exercises:", error);
+      Alert.alert("Error", "Failed to fetch exercises. Please try again later.");
     }
   };
 
@@ -101,7 +112,7 @@ const FitnessScreen: React.FC = () => {
 
   const saveWorkoutProgram = async () => {
     if (selectedExercises.length === 0) {
-      alert("No exercises selected for the workout program.");
+      Alert.alert("Error", "No exercises selected for the workout program.");
       return;
     }
 
@@ -112,12 +123,21 @@ const FitnessScreen: React.FC = () => {
     };
 
     try {
+      const token = await AsyncStorage.getItem('userToken');
+
+      if (!token) {
+        Alert.alert("Error", "You are not logged in. Please log in to save your workout program.");
+        return;
+      }
+
       const response = await fetch(
         "https://fitcom-9fc3ecf39e06.herokuapp.com/api/user-custom-workout-programs/",
         {
           method: "POST",
           headers: {
-            Authorization: "Token 5b38507fc66b3647a75e892259766c75f3f6742f",
+
+            Authorization: `Token ${token}`,
+
             "Content-Type": "application/json",
           },
           body: JSON.stringify(workoutProgram),
@@ -127,15 +147,15 @@ const FitnessScreen: React.FC = () => {
       if (response.ok) {
         const responseData = await response.json();
         console.log("Program saved successfully:", responseData);
-        alert("Workout program saved successfully!");
+        Alert.alert("Success", "Workout program saved successfully!");
       } else {
         const errorData = await response.json();
         console.error("Error saving program:", errorData);
-        alert(errorData.message || "Failed to save the workout program.");
+        Alert.alert("Error", errorData.message || "Failed to save the workout program.");
       }
     } catch (error) {
       console.error("Error saving program:", error);
-      alert("An error occurred while saving the workout program.");
+      Alert.alert("Error", "An error occurred while saving the workout program.");
     } finally {
       setModalVisible(false);
       setProgramName("");
@@ -412,11 +432,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
-  pickerWrapper: {
-    marginBottom: 10,
-  },
- 
-  
+
 });
 
 export default FitnessScreen;
