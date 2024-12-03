@@ -11,10 +11,10 @@ class RegisterSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(max_length=80)
     username = serializers.CharField(max_length=45)
     password = serializers.CharField(min_length=8, write_only=True)
-    weight = serializers.FloatField(required=True)
-    height = serializers.FloatField(required=True)
-    gender = serializers.ChoiceField(choices=User.GENDER_CHOICES, required=True)
-    userLevel = serializers.ChoiceField(choices=User.ACTIVITY_LEVEL_CHOICES, required=True)
+    weight = serializers.FloatField(required=False)
+    height = serializers.FloatField(required=False)
+    gender = serializers.ChoiceField(choices=User.GENDER_CHOICES, required=False)
+    userLevel = serializers.ChoiceField(choices=User.ACTIVITY_LEVEL_CHOICES, required=False)
     profilePicture = serializers.URLField(required=False)
     age = serializers.IntegerField(required=False)
 
@@ -26,7 +26,11 @@ class RegisterSerializer(serializers.ModelSerializer):
         email_exists = User.objects.filter(email=attrs['email']).exists()
         if email_exists:
             raise ValidationError('Email already exists.')
-        return super().validate(attrs)
+
+
+        if not attrs.get('is_staff', False):
+            if not all([attrs.get('weight'), attrs.get('height'), attrs.get('gender'), attrs.get('userLevel')]):
+                raise ValidationError('Weight, height, gender, and user level are required for non-admin users.')
 
     def create(self, validated_data):
         password = validated_data.pop('password')
