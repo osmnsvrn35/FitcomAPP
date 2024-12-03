@@ -371,6 +371,7 @@ const HomeScreen = () => {
   
         <TouchableOpacity
           style={[styles.addMealButton, styles.addFoodButton]}
+          
           onPress={() => setFoodModalVisible(true)} // Opens the food suggestions modal
         >
           <Text style={styles.addMealText}>+ Add Food</Text>
@@ -707,4 +708,3 @@ const styles = StyleSheet.create({
 });
 
 export default HomeScreen;
-

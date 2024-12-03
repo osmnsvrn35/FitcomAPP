@@ -70,7 +70,7 @@ const PersonalDetailsTab = () => (
           "https://fitcom-9fc3ecf39e06.herokuapp.com/api/user-custom-workout-programs/",
           {
             headers: {
-              Authorization: "Token f97ba120683067b6f468b1c05db569c00b74ad97",
+              Authorization: "Token 5b38507fc66b3647a75e892259766c75f3f6742f",
             },
           }
         );
@@ -95,7 +95,7 @@ const PersonalDetailsTab = () => (
           `https://fitcom-9fc3ecf39e06.herokuapp.com/api/user-custom-workout-programs/${programId}/`,
           {
             headers: {
-              Authorization: "Token f97ba120683067b6f468b1c05db569c00b74ad97",
+              Authorization: "Token 5b38507fc66b3647a75e892259766c75f3f6742f",
             },
           }
         );

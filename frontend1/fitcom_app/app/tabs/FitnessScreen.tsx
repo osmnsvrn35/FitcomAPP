@@ -3,15 +3,17 @@ import {
   View,
   Text,
   TextInput,
-  FlatList,
   StyleSheet,
   Image,
   TouchableOpacity,
   Modal,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import Ionicons from "react-native-vector-icons/Ionicons"; // For icons
+import { FlatList } from "react-native";
 
 interface Exercise {
   exercise_id: string;
@@ -25,7 +27,7 @@ interface Exercise {
   instructions?: string;
 }
 
-const FitnessScreen = () => {
+const FitnessScreen: React.FC = () => {
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [filteredExercises, setFilteredExercises] = useState<Exercise[]>([]);
   const [selectedExercises, setSelectedExercises] = useState<Exercise[]>([]);
@@ -42,8 +44,8 @@ const FitnessScreen = () => {
         {
           method: "GET",
           headers: {
-            Authorization: "Token f97ba120683067b6f468b1c05db569c00b74ad97",
-            "Accept": "application/json",
+            Authorization: "Token 5b38507fc66b3647a75e892259766c75f3f6742f",
+            Accept: "application/json",
             "Content-Type": "application/json",
           },
         }
@@ -107,7 +109,6 @@ const FitnessScreen = () => {
       name: programName,
       description: programDescription,
       schedule_ids: selectedExercises.map((exercise) => exercise.exercise_id),
-
     };
 
     try {
@@ -116,7 +117,7 @@ const FitnessScreen = () => {
         {
           method: "POST",
           headers: {
-            Authorization: "Token f97ba120683067b6f468b1c05db569c00b74ad97",
+            Authorization: "Token 5b38507fc66b3647a75e892259766c75f3f6742f",
             "Content-Type": "application/json",
           },
           body: JSON.stringify(workoutProgram),
@@ -165,21 +166,24 @@ const FitnessScreen = () => {
   );
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
       <TextInput
         style={styles.searchInput}
         placeholder="Search exercises"
+        placeholderTextColor="#000" 
         value={searchValue}
         onChangeText={handleSearchChange}
       />
-
-    <Picker
-      selectedValue={bodyPartFilter}
-      onValueChange={(value) => {
-        console.log(`Selected Body Part: ${value}`); // Debugging log
-        handleBodyPartChange(value); // Ensure this function is properly called
-      }}
-      style={styles.picker}
+      <View style={styles.pickerWrapper}>
+      <Picker
+        selectedValue={bodyPartFilter}
+        onValueChange={(value) => handleBodyPartChange(value)}
+        style={styles.picker}
+        itemStyle={styles.pickerItem} // For customizing text inside Picker items
+        mode="dropdown" // Dropdown mode for smaller appearance
       >
         <Picker.Item label="All Body Parts" value="all" />
         <Picker.Item label="Back" value="back" />
@@ -193,20 +197,20 @@ const FitnessScreen = () => {
         <Picker.Item label="Waist" value="waist" />
       </Picker>
 
+      </View>
       <FlatList
         data={filteredExercises}
         keyExtractor={(item) => item.exercise_id}
         renderItem={renderExerciseCard}
+        contentContainerStyle={{ paddingBottom: 100 }} // Prevent overlapping with buttons
       />
-
       <TouchableOpacity
         style={styles.saveCartButton}
         onPress={() => setModalVisible(true)}
       >
-        <Ionicons name="cart" size={30} color="#fff" />
+        <Ionicons name="list" size={30} color="#fff" />
         <Text style={styles.saveCartButtonText}>{selectedExercises.length}</Text>
       </TouchableOpacity>
-
       <Modal visible={modalVisible} animationType="fade" transparent={true}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalPopup}>
@@ -239,7 +243,7 @@ const FitnessScreen = () => {
           </View>
         </View>
       </Modal>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -322,11 +326,18 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   picker: {
-    height: 50,
     width: "100%",
-    marginBottom: 10,
     backgroundColor: "#fff",
-    borderRadius: 8,
+    height: 100,
+    overflow: "hidden",
+    
+  },
+  pickerItem: {
+    color: "#000", 
+    fontSize: 20, 
+    fontWeight: "normal", // Adjust text weight if needed
+    height: 100,
+
   },
   exerciseCard: {
     backgroundColor: "#fff",
@@ -401,6 +412,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
+  pickerWrapper: {
+    marginBottom: 10,
+  },
+ 
   
 });
 
