@@ -39,8 +39,7 @@ type Exercise = {
 
 
 
-// Workout Programs Tab
-const PersonalDetailsTab = () => {
+  const PersonalDetailsTab = () => {
   const [workoutPrograms, setWorkoutPrograms] = useState<WorkoutProgram[]>([]);
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [exerciseModalVisible, setExerciseModalVisible] = useState(false);
@@ -65,6 +64,7 @@ const PersonalDetailsTab = () => {
           headers: {
             Authorization: `Token ${token}`,
           },
+
         }
       );
 
@@ -94,6 +94,7 @@ const PersonalDetailsTab = () => {
           headers: {
             Authorization: `Token ${token}`,
           },
+
         }
       );
 

@@ -191,6 +191,7 @@ const CommunityScreen = () => {
         <TextInput
           style={styles.searchInput}
           placeholder="Search for posts..."
+          placeholderTextColor="#000" 
           value={searchTerm}
           onChangeText={setSearchTerm}
         />
