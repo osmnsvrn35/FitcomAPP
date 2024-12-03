@@ -1,5 +1,5 @@
 import React from "react";
-import { Tabs, useNavigation } from "expo-router";
+import { Tabs } from "expo-router";
 import { FontAwesome } from "@expo/vector-icons";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 
@@ -49,8 +49,8 @@ export default function TabLayout() {
         name="FoodScannerScreen"
         options={{
           title: "",
-          tabBarIcon: () => null, 
-          tabBarButton: () => <CentralButton />,
+          tabBarIcon: () => null, // No icon for central button
+          tabBarButton: (props) => <CentralButton {...props} />, // Pass props to the central button
         }}
       />
 
@@ -79,14 +79,12 @@ export default function TabLayout() {
   );
 }
 
-const CentralButton = () => {
-  const navigation = useNavigation();
-
+const CentralButton = ({ navigation }: any) => {
   return (
     <View style={styles.centralButtonContainer}>
       <TouchableOpacity
         style={styles.centralButton}
-        onPress={() => navigation.navigate("FoodScannerScreen" as never)}
+        onPress={() => navigation.navigate("FoodScannerScreen")}
       >
         <FontAwesome name="camera" size={28} color="#fff" />
       </TouchableOpacity>

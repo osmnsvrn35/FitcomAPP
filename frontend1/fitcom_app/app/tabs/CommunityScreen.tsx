@@ -71,7 +71,7 @@ const CommunityScreen = () => {
       const getResponse = await fetch(url, {
         method: "GET",
         headers: {
-          Authorization: "Token 111a1750f9c1d350bd68aba2ffebc430d5dedefc",
+          Authorization: "Token a5b92d9b5c9607bfc14429c069da60f2321e4b67",
         },
       });
 
@@ -88,7 +88,7 @@ const CommunityScreen = () => {
       const patchResponse = await fetch(url, {
         method: "PATCH",
         headers: {
-          Authorization: "Token 111a1750f9c1d350bd68aba2ffebc430d5dedefc",
+          Authorization: "Token a5b92d9b5c9607bfc14429c069da60f2321e4b67",
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ likes: newLikes }),
@@ -136,7 +136,7 @@ const CommunityScreen = () => {
       const response = await fetch("https://fitcom-9fc3ecf39e06.herokuapp.com/api/posts/", {
         method: "POST",
         headers: {
-          Authorization: "Token 111a1750f9c1d350bd68aba2ffebc430d5dedefc",
+          Authorization: "Token a5b92d9b5c9607bfc14429c069da60f2321e4b67",
         },
         body: formData,
       });

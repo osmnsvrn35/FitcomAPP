@@ -6,11 +6,11 @@ import {
   TouchableOpacity,
   TextInput,
   Modal,
-  Button,
   Image,
   FlatList,
   Alert,
 } from "react-native";
+import CryptoJS from "crypto-js";
 
 type Exercise = {
   id: string;
@@ -39,6 +39,9 @@ const HomeScreen = () => {
   });
 
   const [selectedWorkout, setSelectedWorkout] = useState<WorkoutProgram | null>(null);
+  const [foodModalVisible, setFoodModalVisible] = useState(false);
+  const [foodList, setFoodList] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const maxNutrition = {
     calories: 3500,
@@ -76,7 +79,7 @@ const HomeScreen = () => {
         "https://fitcom-9fc3ecf39e06.herokuapp.com/api/user-workout-program/",
         {
           headers: {
-            Authorization: "Token 111a1750f9c1d350bd68aba2ffebc430d5dedefc",
+            Authorization: "Token f97ba120683067b6f468b1c05db569c00b74ad97",
           },
         }
       );
@@ -94,6 +97,78 @@ const HomeScreen = () => {
     }
   };
 
+  const fetchFoodSuggestions = async (query: string) => {
+    if (!query) {
+      setFoodList([]);
+      return;
+    }
+
+    const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let nonce = "";
+    for (let i = 0; i < 16; i++) {
+      nonce += charset.charAt(Math.floor(Math.random() * charset.length));
+    }
+    const timestamp = Math.floor(Date.now() / 1000);
+
+    const consumerKey = "2e7307812ba443c0948b842ee0f23e21";
+    const consumerSecret = "f076f0475ec3425c83630d5d3f1fa204";
+
+    const params: Record<string, string> = {
+      method: "foods.search",
+      search_expression: query,
+      format: "json",
+      oauth_consumer_key: consumerKey,
+      oauth_signature_method: "HMAC-SHA1",
+      oauth_timestamp: timestamp.toString(),
+      oauth_nonce: nonce,
+      oauth_version: "1.0",
+      max_results: '5',
+    };
+
+    const sortedParams = Object.keys(params)
+      .sort()
+      .map((key) => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
+      .join("&");
+
+    const baseString = `GET&${encodeURIComponent(
+      "https://platform.fatsecret.com/rest/server.api"
+    )}&${encodeURIComponent(sortedParams)}`;
+
+    const signingKey = `${encodeURIComponent(consumerSecret)}&`;
+    const oauthSignature = CryptoJS.HmacSHA1(baseString, signingKey).toString(CryptoJS.enc.Base64);
+
+    params.oauth_signature = oauthSignature;
+
+    const apiUrl = `https://platform.fatsecret.com/rest/server.api?${new URLSearchParams(params).toString()}`;
+
+    const proxyUrl = `http://localhost:8092/proxy?url=${encodeURIComponent(apiUrl)}`;
+
+    try {
+      const response = await fetch(proxyUrl);
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log("API Response:", result);
+        setFoodList(result.foods.food || []);
+      } else {
+        const error = await response.json();
+        Alert.alert("Error", error.message || "Failed to fetch food suggestions.");
+      }
+    } catch (error) {
+      console.error("Error fetching food suggestions:", error);
+      Alert.alert("Error", "An unexpected error occurred while fetching food suggestions.");
+    }
+  };
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    if (query.length > 2) {
+      fetchFoodSuggestions(query);
+    } else {
+      setFoodList([]);
+    }
+  };
+
   const renderExerciseItem = ({ item }: { item: Exercise }) => (
     <View style={styles.exerciseItem}>
       <Text style={styles.exerciseName}>{item.name}</Text>
@@ -101,6 +176,132 @@ const HomeScreen = () => {
     </View>
   );
 
+  const renderFoodItem = ({ item }: { item: any }) => (
+    <TouchableOpacity
+      style={styles.foodItem}
+      onPress={() => {
+        if (item.food_id) {
+          handleFoodSelection(item);
+        } else {
+          console.error("Invalid item:", item);
+          Alert.alert("Error", "Selected food item is invalid.");
+        }
+      }}
+    >
+      <Text style={styles.foodName}>{item.food_name}</Text>
+      <Text style={styles.foodDescription}>{item.food_description}</Text>
+    </TouchableOpacity>
+  );
+
+
+
+  const handleFoodSelection = async (item: any) => {
+    console.log("Selected Food Item:", item);
+  
+    const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let nonce = "";
+    for (let i = 0; i < 16; i++) {
+      nonce += charset.charAt(Math.floor(Math.random() * charset.length));
+    }
+    const timestamp = Math.floor(Date.now() / 1000);
+  
+    const consumerKey = "2e7307812ba443c0948b842ee0f23e21";
+    const consumerSecret = "f076f0475ec3425c83630d5d3f1fa204";
+  
+    const params: Record<string, string> = {
+      method: "food.get",
+      food_id: item.food_id,
+      format: "json",
+      oauth_consumer_key: consumerKey,
+      oauth_signature_method: "HMAC-SHA1",
+      oauth_timestamp: timestamp.toString(),
+      oauth_nonce: nonce,
+      oauth_version: "1.0",
+    };
+  
+    const sortedParams = Object.keys(params)
+      .sort()
+      .map((key) => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
+      .join("&");
+  
+    const baseString = `GET&${encodeURIComponent(
+      "https://platform.fatsecret.com/rest/server.api"
+    )}&${encodeURIComponent(sortedParams)}`;
+  
+    const signingKey = `${encodeURIComponent(consumerSecret)}&`;
+    const oauthSignature = CryptoJS.HmacSHA1(baseString, signingKey).toString(CryptoJS.enc.Base64);
+  
+    params.oauth_signature = oauthSignature;
+  
+    const apiUrl = `https://platform.fatsecret.com/rest/server.api?${new URLSearchParams(params).toString()}`;
+    const proxyUrl = `http://localhost:8092/proxy?url=${encodeURIComponent(apiUrl)}`;
+  
+    try {
+      const response = await fetch(proxyUrl);
+      if (response.ok) {
+        const result = await response.json();
+        console.log("Nutritional Details:", result);
+  
+        // Extract the first serving's nutritional values
+        const serving = result.food?.servings?.serving?.[0];
+        if (serving) {
+          // Parse and round values to 1 decimal place
+          const calories = parseFloat(serving.calories || 0).toFixed(1);
+          const fat = parseFloat(serving.fat || 0).toFixed(1);
+          const carbs = parseFloat(serving.carbohydrate || 0).toFixed(1);
+          const protein = parseFloat(serving.protein || 0).toFixed(1);
+  
+          // Update the progress bar's state
+          setNutrition((prevNutrition) => ({
+            calories: Math.min(
+              parseFloat((prevNutrition.calories + parseFloat(calories)).toFixed(1)),
+              maxNutrition.calories
+            ),
+            fat: Math.min(
+              parseFloat((prevNutrition.fat + parseFloat(fat)).toFixed(1)),
+              maxNutrition.fat
+            ),
+            carbs: Math.min(
+              parseFloat((prevNutrition.carbs + parseFloat(carbs)).toFixed(1)),
+              maxNutrition.carbs
+            ),
+            protein: Math.min(
+              parseFloat((prevNutrition.protein + parseFloat(protein)).toFixed(1)),
+              maxNutrition.protein
+            ),
+          }));
+          
+          
+  
+          console.log("Updated Nutrition:", {
+            calories,
+            fat,
+            carbs,
+            protein,
+          });
+  
+          Alert.alert(
+            "Food Added",
+            `${item.food_name} added! (${calories} cal, ${fat}g fat, ${carbs}g carbs, ${protein}g protein)`
+          );
+        } else {
+          Alert.alert("Error", "No serving information found for this food.");
+        }
+      } else {
+        const error = await response.json();
+        console.error("Error fetching nutritional details:", error);
+        Alert.alert("Error", error.message || "Failed to fetch nutritional details.");
+      }
+    } catch (error) {
+      console.error("Error fetching nutritional details:", error);
+      Alert.alert("Error", "An unexpected error occurred while fetching nutritional details.");
+    }
+  };
+  
+
+  
+  
+  
   return (
     <View style={styles.container}>
       {/* Date Section */}
@@ -113,14 +314,14 @@ const HomeScreen = () => {
           <Text style={styles.navArrow}>&gt;</Text>
         </TouchableOpacity>
       </View>
-
+  
       {/* Nutritional Progress Section */}
       <View style={styles.progressSection}>
         {Object.keys(nutrition).map((key) => (
           <View key={key} style={styles.nutritionItem}>
             <Text>
               {key.charAt(0).toUpperCase() + key.slice(1)}:{" "}
-              {nutrition[key as keyof typeof nutrition]} / {maxNutrition[key as keyof typeof maxNutrition]}
+              {nutrition[key as keyof typeof nutrition].toFixed(1)} / {maxNutrition[key as keyof typeof maxNutrition]}
             </Text>
             <View style={styles.progressBar}>
               <View
@@ -139,6 +340,8 @@ const HomeScreen = () => {
         ))}
       </View>
 
+  
+      
       {/* Program Section */}
       <View style={styles.programSection}>
         <TouchableOpacity style={styles.programButton} onPress={fetchWorkoutProgram}>
@@ -156,45 +359,77 @@ const HomeScreen = () => {
           />
         </TouchableOpacity>
       </View>
-
-      {/* Water Tracker Section */}
-      <View style={styles.waterTracker}>
-        <Text style={styles.waterAmount}>{`${waterLevel} ml`}</Text>
-        <View style={styles.waterGlass}>
-          <View
-            style={[
-              styles.waterFill,
-              { height: `${(waterLevel / 3000) * 100}%` },
-            ]}
-          />
-        </View>
-        <View style={styles.waterButtons}>
-          <TouchableOpacity
-            style={styles.circleButton}
-            onPress={() => adjustWater(-250)}
-          >
-            <Text>-</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.circleButton}
-            onPress={() => adjustWater(250)}
-          >
-            <Text>+</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Add Meal Section */}
+  
+      {/* Add Meal and Add Food Buttons */}
       <View style={styles.addMealContainer}>
         <TouchableOpacity
           style={styles.addMealButton}
-          onPress={() => setMealModalVisible(true)}
+          onPress={() => setMealModalVisible(true)} // Opens the meal modal
         >
           <Text style={styles.addMealText}>+ Add Meal</Text>
         </TouchableOpacity>
+  
+        <TouchableOpacity
+          style={[styles.addMealButton, styles.addFoodButton]}
+          onPress={() => setFoodModalVisible(true)} // Opens the food suggestions modal
+        >
+          <Text style={styles.addMealText}>+ Add Food</Text>
+        </TouchableOpacity>
       </View>
-
-      {/* Modal for Workout Program */}
+      {/* Water Tracker */}
+      <View style={styles.waterTracker}>
+            <Text style={styles.waterAmount}>{`${waterLevel} ml`}</Text>
+            <View style={styles.waterGlass}>
+              <View
+                style={[
+                  styles.waterFill,
+                  { height: `${(waterLevel / 3000) * 100}%` },
+                ]}
+              />
+            </View>
+            <View style={styles.waterButtons}>
+              <TouchableOpacity
+                style={styles.circleButton}
+                onPress={() => adjustWater(-250)}
+              >
+                <Text>-</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.circleButton}
+                onPress={() => adjustWater(250)}
+              >
+                <Text>+</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+  
+      {/* Food Suggestions Modal */}
+      <Modal visible={foodModalVisible} animationType="slide" transparent={true}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Search Food</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Type food name..."
+              value={searchQuery}
+              onChangeText={handleSearch}
+            />
+            <FlatList
+              data={foodList}
+              keyExtractor={(item, index) => index.toString()}
+              renderItem={renderFoodItem}
+            />
+            <TouchableOpacity
+              style={styles.modalButton}
+              onPress={() => setFoodModalVisible(false)}
+            >
+              <Text style={styles.modalButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+  
+      {/* Workout Modal */}
       <Modal visible={workoutModalVisible} animationType="slide" transparent={true}>
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
@@ -220,57 +455,9 @@ const HomeScreen = () => {
           </View>
         </View>
       </Modal>
-
-      {/* Modal for Adding Meal */}
-      <Modal visible={mealModalVisible} animationType="slide" transparent={true}>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Add Meal</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Calories"
-              keyboardType="numeric"
-              onChangeText={(value) => handleInputChange("calories", value)}
-              value={meal.calories}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Fat (g)"
-              keyboardType="numeric"
-              onChangeText={(value) => handleInputChange("fat", value)}
-              value={meal.fat}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Carbs (g)"
-              keyboardType="numeric"
-              onChangeText={(value) => handleInputChange("carbs", value)}
-              value={meal.carbs}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Protein (g)"
-              keyboardType="numeric"
-              onChangeText={(value) => handleInputChange("protein", value)}
-              value={meal.protein}
-            />
-            <TouchableOpacity
-              style={styles.modalButton}
-              onPress={() => setMealModalVisible(false)}
-            >
-              <Text style={styles.modalButtonText}>Add Meal</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.modalButton}
-              onPress={() => setMealModalVisible(false)}
-            >
-              <Text style={styles.modalButtonText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
+  
 };
 
 const styles = StyleSheet.create({
@@ -389,28 +576,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginHorizontal: 10,
   },
-  addMealContainer: {
-    position: "absolute",
-    bottom: 20,
-    width: "100%",
-    alignItems: "center",
-  },
-  addMealButton: {
-    backgroundColor: "#ff7e5f",
-    paddingVertical: 12,
-    paddingHorizontal: 40,
-    borderRadius: 25,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  addMealText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 18,
-  },
+  
+ 
   modalContainer: {
     flex: 1,
     justifyContent: "center",
@@ -418,38 +585,29 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.5)",
   },
   modalContent: {
-    width: "80%",
+    width: "90%",
     backgroundColor: "#fff",
     padding: 20,
     borderRadius: 12,
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
   },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 10,
-  },
+  
   modalDescription: {
     fontSize: 14,
     color: "#555",
     marginBottom: 10,
+    textAlign: "center", // Optional: Aligns the text to the center
   },
-  exerciseItem: {
-    marginVertical: 10,
-    padding: 10,
-    borderRadius: 5,
-    backgroundColor: "#f9f9f9",
-    borderWidth: 1,
-    borderColor: "#ddd",
-  },
-  exerciseName: {
-    fontSize: 16,
+  
+  modalTitle: {
+    fontSize: 18,
     fontWeight: "bold",
-    color: "#333",
-  },
-  exerciseDescription: {
-    fontSize: 14,
-    color: "#666",
+    marginBottom: 10,
   },
   modalButton: {
     backgroundColor: "#007BFF",
@@ -469,6 +627,84 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 10,
   },
+  foodItem: {
+    padding: 12,
+    marginVertical: 5,
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: "#e0e7ec",
+  },
+  foodName: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 5,
+  },
+  foodDescription: {
+    fontSize: 14,
+    color: "#555",
+    marginBottom: 8,
+  },
+  foodDetailsText: {
+    fontSize: 12,
+    color: "#777",
+  },
+  foodDetailsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 5,
+  },
+  exerciseItem: {
+    marginVertical: 10,
+    padding: 10,
+    borderRadius: 5,
+    backgroundColor: "#f9f9f9",
+    borderWidth: 1,
+    borderColor: "#ddd",
+  },
+  exerciseName: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  exerciseDescription: {
+    fontSize: 14,
+    color: "#666",
+  },
+  addMealContainer: {
+    position: "absolute",
+    bottom: 20,
+    width: "100%",
+    flexDirection: "row",
+    justifyContent: "space-around",
+  },
+  addMealButton: {
+    backgroundColor: "#ff7e5f",
+    paddingVertical: 12,
+    paddingHorizontal: 40,
+    borderRadius: 25,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  addFoodButton: {
+    backgroundColor: "#1e90ff",
+  },
+  addMealText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 18,
+  },
+  
 });
 
 export default HomeScreen;
+

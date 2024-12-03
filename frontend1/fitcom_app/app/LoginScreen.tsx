@@ -6,31 +6,34 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  ScrollView,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation } from "@react-navigation/native";
-import { AppStackParamList } from "./app";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
-type LoginScreenNavigationProp = NativeStackNavigationProp<
-  AppStackParamList,
-  "Login"
->;
-
-type LoginScreenProps = {
-  setIsLoggedIn: React.Dispatch<React.SetStateAction<boolean>>;
+type AuthStackParamList = {
+  Login: undefined;
+  Register: undefined;
+  TabLayout: undefined;
 };
 
-const LoginScreen: React.FC<LoginScreenProps> = ({ setIsLoggedIn }) => {
-  const navigation = useNavigation<LoginScreenNavigationProp>();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+interface LoginScreenProps {
+  setIsLoggedIn: React.Dispatch<React.SetStateAction<boolean>>;
+}
 
-  // Debugging: Log setIsLoggedIn
-  console.log("setIsLoggedIn function:", setIsLoggedIn);
+const LoginScreen: React.FC<LoginScreenProps> = ({ setIsLoggedIn }) => {
+  const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
+
+  const handleInputChange = (key: string, value: string) => {
+    setFormData((prevData) => ({ ...prevData, [key]: value }));
+  };
 
   const handleLogin = async () => {
-    if (!email || !password) {
+    if (!formData.email || !formData.password) {
       Alert.alert("Error", "Please enter both email and password.");
       return;
     }
@@ -44,8 +47,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ setIsLoggedIn }) => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            email: email,
-            password: password,
+            email: formData.email,
+            password: formData.password,
           }),
         }
       );
@@ -53,14 +56,13 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ setIsLoggedIn }) => {
       if (response.ok) {
         const data = await response.json();
         console.log("Login successful:", data);
-
-        await AsyncStorage.setItem("authToken", data.token);
-
-        Alert.alert("Success", "Login successful");
-        setIsLoggedIn(true); // Navigate to main app
+        setIsLoggedIn(true); // Set the login state
       } else {
         const errorData = await response.json();
-        Alert.alert("Login Failed", errorData.message || "Invalid credentials");
+        Alert.alert(
+          "Login Failed",
+          errorData.message || "Invalid email or password."
+        );
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -69,78 +71,71 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ setIsLoggedIn }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Login</Text>
+
       <TextInput
         style={styles.input}
         placeholder="Email"
+        value={formData.email}
+        onChangeText={(value) => handleInputChange("email", value)}
         keyboardType="email-address"
-        onChangeText={(text) => setEmail(text)}
-        value={email}
       />
       <TextInput
         style={styles.input}
         placeholder="Password"
+        value={formData.password}
+        onChangeText={(value) => handleInputChange("password", value)}
         secureTextEntry
-        onChangeText={(text) => setPassword(text)}
-        value={password}
       />
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Login</Text>
+
+      <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+        <Text style={styles.loginButtonText}>Login</Text>
       </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.registerButton}
-        onPress={() => navigation.navigate("RegisterScreen")}
-      >
-        <Text style={styles.registerButtonText}>
-          Don’t have an account? Sign up
-        </Text>
+
+      <TouchableOpacity onPress={() => navigation.navigate("Register")}>
+        <Text style={styles.registerLink}>Don't have an account? Register here</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    flexGrow: 1,
+    padding: 20,
     backgroundColor: "#f4f4f4",
   },
   title: {
     fontSize: 24,
     fontWeight: "bold",
     marginBottom: 20,
+    textAlign: "center",
   },
   input: {
-    width: "80%",
-    borderColor: "#ccc",
     borderWidth: 1,
+    borderColor: "#ccc",
     borderRadius: 8,
     padding: 10,
     marginBottom: 15,
     backgroundColor: "#fff",
   },
-  button: {
-    width: "80%",
+  loginButton: {
     backgroundColor: "#1e90ff",
     padding: 15,
     borderRadius: 8,
     alignItems: "center",
-    marginTop: 10,
+    marginVertical: 10,
   },
-  buttonText: {
+  loginButtonText: {
     color: "#fff",
-    fontWeight: "bold",
     fontSize: 16,
-  },
-  registerButton: {
-    marginTop: 20,
-  },
-  registerButtonText: {
-    color: "#1e90ff",
-    fontSize: 14,
     fontWeight: "bold",
+  },
+  registerLink: {
+    color: "blue",
+    textAlign: "center",
+    marginTop: 20,
   },
 });
 

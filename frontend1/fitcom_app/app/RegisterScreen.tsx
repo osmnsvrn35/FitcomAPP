@@ -8,6 +8,7 @@ import {
   ScrollView,
   Alert,
 } from "react-native";
+import { Picker } from "@react-native-picker/picker";
 
 const RegisterScreen: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -18,12 +19,13 @@ const RegisterScreen: React.FC = () => {
     height: "",
     weight: "",
     gender: "",
+    userLevel: "Sedentary", // Default activity level
   });
 
   const handleInputChange = (key: string, value: string) => {
     setFormData((prevData) => ({
       ...prevData,
-      [key]: value,
+      [key]: key === "gender" ? value.toLowerCase() : value, // Convert gender to lowercase
     }));
   };
 
@@ -41,6 +43,19 @@ const RegisterScreen: React.FC = () => {
       return;
     }
 
+    const payload = {
+      username: formData.username,
+      email: formData.email,
+      password: formData.password,
+      age: parseInt(formData.age),
+      height: parseFloat(formData.height),
+      weight: parseFloat(formData.weight),
+      gender: formData.gender, // Already lowercase
+      userLevel: formData.userLevel, // Enum value
+    };
+
+    console.log("Payload being sent to server:", payload);
+
     try {
       const response = await fetch(
         "https://fitcom-9fc3ecf39e06.herokuapp.com/auth/register/",
@@ -49,15 +64,7 @@ const RegisterScreen: React.FC = () => {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            username: formData.username,
-            email: formData.email,
-            password: formData.password,
-            age: parseInt(formData.age),
-            height: parseFloat(formData.height),
-            weight: parseFloat(formData.weight),
-            gender: formData.gender,
-          }),
+          body: JSON.stringify(payload),
         }
       );
 
@@ -67,6 +74,7 @@ const RegisterScreen: React.FC = () => {
         Alert.alert("Success", "Registration successful! Please log in.");
       } else {
         const errorData = await response.json();
+        console.error("Registration failed:", errorData);
         Alert.alert(
           "Registration Failed",
           errorData.message || "Unable to register."
@@ -140,14 +148,14 @@ const RegisterScreen: React.FC = () => {
         <TouchableOpacity
           style={[
             styles.genderButton,
-            formData.gender === "Male" && styles.selectedGenderButton,
+            formData.gender === "male" && styles.selectedGenderButton,
           ]}
-          onPress={() => handleInputChange("gender", "Male")}
+          onPress={() => handleInputChange("gender", "male")}
         >
           <Text
             style={[
               styles.genderButtonText,
-              formData.gender === "Male" && styles.selectedGenderButtonText,
+              formData.gender === "male" && styles.selectedGenderButtonText,
             ]}
           >
             Male
@@ -156,19 +164,34 @@ const RegisterScreen: React.FC = () => {
         <TouchableOpacity
           style={[
             styles.genderButton,
-            formData.gender === "Female" && styles.selectedGenderButton,
+            formData.gender === "female" && styles.selectedGenderButton,
           ]}
-          onPress={() => handleInputChange("gender", "Female")}
+          onPress={() => handleInputChange("gender", "female")}
         >
           <Text
             style={[
               styles.genderButtonText,
-              formData.gender === "Female" && styles.selectedGenderButtonText,
+              formData.gender === "female" && styles.selectedGenderButtonText,
             ]}
           >
             Female
           </Text>
         </TouchableOpacity>
+      </View>
+
+      <Text style={styles.label}>Activity Level</Text>
+      <View style={styles.pickerContainer}>
+        <Picker
+          selectedValue={formData.userLevel}
+          onValueChange={(value) => handleInputChange("userLevel", value)}
+        >
+          <Picker.Item label="Sedentary" value="Sedentary" />
+          <Picker.Item label="Light" value="Light" />
+          <Picker.Item label="Moderate" value="Moderate" />
+          <Picker.Item label="Active" value="Active" />
+          <Picker.Item label="Very Active" value="Very Active" />
+          <Picker.Item label="Extra Active" value="Extra Active" />
+        </Picker>
       </View>
 
       <TouchableOpacity style={styles.registerButton} onPress={handleRegister}>
@@ -226,6 +249,13 @@ const styles = StyleSheet.create({
   selectedGenderButtonText: {
     color: "#fff",
     fontWeight: "bold",
+  },
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    marginBottom: 15,
+    backgroundColor: "#fff",
   },
   registerButton: {
     backgroundColor: "#1e90ff",

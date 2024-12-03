@@ -42,7 +42,7 @@ const FitnessScreen = () => {
         {
           method: "GET",
           headers: {
-            Authorization: "Token 111a1750f9c1d350bd68aba2ffebc430d5dedefc",
+            Authorization: "Token f97ba120683067b6f468b1c05db569c00b74ad97",
             "Accept": "application/json",
             "Content-Type": "application/json",
           },
@@ -116,7 +116,7 @@ const FitnessScreen = () => {
         {
           method: "POST",
           headers: {
-            Authorization: "Token 111a1750f9c1d350bd68aba2ffebc430d5dedefc",
+            Authorization: "Token f97ba120683067b6f468b1c05db569c00b74ad97",
             "Content-Type": "application/json",
           },
           body: JSON.stringify(workoutProgram),
