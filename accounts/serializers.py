@@ -63,3 +63,5 @@ class DailyUserProgressSerializer(serializers.ModelSerializer):
     class Meta:
         model = DailyUserProgress
         fields = '__all__'
+
+
