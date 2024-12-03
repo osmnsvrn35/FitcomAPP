@@ -1,8 +1,8 @@
 from rest_framework import generics, status, viewsets
-from rest_framework.permissions import AllowAny, IsAdminUser,IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAdminUser,IsAuthenticated,IsOwnerOrAdmin
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from rest_framework.permissions import BasePermission
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
 from drf_yasg.utils import swagger_auto_schema
@@ -10,6 +10,10 @@ from drf_yasg import openapi
 from .models import User,DailyUserProgress
 from .serializers import RegisterSerializer, UserSerializer,LoginSerializer, DailyUserProgressSerializer
 
+
+class IsOwnerOrAdmin(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        return request.user.is_staff or obj == request.user
 
 
 class RegisterView(generics.GenericAPIView):
@@ -73,7 +77,12 @@ class LogoutView(APIView):
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().order_by('id')
     serializer_class = UserSerializer
-    permission_classes = [IsAdminUser]
+
+    def get_permissions(self):
+        if self.action == 'retrieve':
+            return [IsAuthenticated(), IsOwnerOrAdmin()]
+
+        return [IsAdminUser()]
 
 
 
