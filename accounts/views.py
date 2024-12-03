@@ -1,15 +1,16 @@
 from rest_framework import generics, status, viewsets
-from rest_framework.permissions import AllowAny, IsAdminUser,IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import BasePermission
+from rest_framework.decorators import action
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-from .models import User,DailyUserProgress
-from .serializers import RegisterSerializer, UserSerializer,LoginSerializer, DailyUserProgressSerializer
-from django.utils.decorators import method_decorator,action
+from .models import User, DailyUserProgress
+from .serializers import RegisterSerializer, UserSerializer, LoginSerializer, DailyUserProgressSerializer
+from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 class IsOwnerOrAdmin(BasePermission):
     def has_object_permission(self, request, view, obj):
