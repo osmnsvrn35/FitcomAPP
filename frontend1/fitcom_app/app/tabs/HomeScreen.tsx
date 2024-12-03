@@ -11,6 +11,7 @@ import {
   Alert,
 } from "react-native";
 import CryptoJS from "crypto-js";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type Exercise = {
   id: string;
@@ -32,23 +33,25 @@ const HomeScreen = () => {
   const [meal, setMeal] = useState({ calories: "", fat: "", carbs: "", protein: "" });
   const [waterLevel, setWaterLevel] = useState(1000);
   const [nutrition, setNutrition] = useState({
-    calories: 1000,
-    fat: 50,
-    carbs: 100,
-    protein: 75,
+    calories: 0,
+    fat: 0,
+    carbs: 0,
+    protein: 0,
   });
+
+
 
   const [selectedWorkout, setSelectedWorkout] = useState<WorkoutProgram | null>(null);
   const [foodModalVisible, setFoodModalVisible] = useState(false);
   const [foodList, setFoodList] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const maxNutrition = {
-    calories: 3500,
-    fat: 100,
-    carbs: 200,
-    protein: 150,
-  };
+  const [maxNutrition, setMaxNutrition] = useState<{
+    calories?: number;
+    fat?: number;
+    carbs?: number;
+    protein?: number;
+  }>({});
 
   useEffect(() => {
     const today = new Date();
@@ -70,16 +73,24 @@ const HomeScreen = () => {
     setMeal((prevMeal) => ({ ...prevMeal, [key]: value }));
   };
 
-  const getProgressPercentage = (value: number, max: number) =>
-    Math.min((value / max) * 100, 100);
+  const getProgressPercentage = (current: number, max: number | undefined) => {
+    if (!max) return 0;
+    return (current / max) * 100;
+  };
 
   const fetchWorkoutProgram = async () => {
     try {
+      const token = await AsyncStorage.getItem("authToken");
+      if (!token) {
+        Alert.alert("Error", "No token found.");
+        return;
+      }
+
       const response = await fetch(
         "https://fitcom-9fc3ecf39e06.herokuapp.com/api/user-workout-program/",
         {
           headers: {
-            Authorization: "Token f97ba120683067b6f468b1c05db569c00b74ad97",
+            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -193,21 +204,71 @@ const HomeScreen = () => {
     </TouchableOpacity>
   );
 
+  useEffect(() => {
+    fetchUserData();
+  }, []);
 
+  const fetchUserData = async () => {
+    try {
+      const token = await AsyncStorage.getItem('userToken');
+      const userId = await AsyncStorage.getItem('userId');
+
+      if (!token || !userId) {
+        Alert.alert("Error", "User not logged in.");
+        return;
+      }
+
+      const response = await fetch(
+        `https://fitcom-9fc3ecf39e06.herokuapp.com/api/users/${userId}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Token ${token}`,
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+  console.log(`Response Headers: ${JSON.stringify(response.headers)}`);
+      console.log(`token: ${token}`); console.log(`userId: ${userId}`);
+      if (response.ok) {
+        const userData = await response.json();
+        setMaxNutrition({
+          calories: userData.kcal_needs,
+          fat: userData.fat_needs,
+          carbs: userData.carbs_needs,
+          protein: userData.protein_needs,
+        });
+
+
+        setNutrition({
+          calories: userData.caloriesGoal,
+          fat: userData.fatGoal,
+          carbs: userData.carbsGoal,
+          protein: userData.proteinGoal,
+        });
+      } else {
+        Alert.alert("Error", "Failed to fetch user data.");
+      }
+    } catch (error) {
+      Alert.alert("Error", "An unexpected error occurred while fetching user data.");
+    }
+  };
 
   const handleFoodSelection = async (item: any) => {
     console.log("Selected Food Item:", item);
-  
+
     const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     let nonce = "";
     for (let i = 0; i < 16; i++) {
       nonce += charset.charAt(Math.floor(Math.random() * charset.length));
     }
     const timestamp = Math.floor(Date.now() / 1000);
-  
+
     const consumerKey = "2e7307812ba443c0948b842ee0f23e21";
     const consumerSecret = "f076f0475ec3425c83630d5d3f1fa204";
-  
+
     const params: Record<string, string> = {
       method: "food.get",
       food_id: item.food_id,
@@ -218,30 +279,30 @@ const HomeScreen = () => {
       oauth_nonce: nonce,
       oauth_version: "1.0",
     };
-  
+
     const sortedParams = Object.keys(params)
       .sort()
       .map((key) => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
       .join("&");
-  
+
     const baseString = `GET&${encodeURIComponent(
       "https://platform.fatsecret.com/rest/server.api"
     )}&${encodeURIComponent(sortedParams)}`;
-  
+
     const signingKey = `${encodeURIComponent(consumerSecret)}&`;
     const oauthSignature = CryptoJS.HmacSHA1(baseString, signingKey).toString(CryptoJS.enc.Base64);
-  
+
     params.oauth_signature = oauthSignature;
-  
+
     const apiUrl = `https://platform.fatsecret.com/rest/server.api?${new URLSearchParams(params).toString()}`;
     const proxyUrl = `http://localhost:8092/proxy?url=${encodeURIComponent(apiUrl)}`;
-  
+
     try {
       const response = await fetch(proxyUrl);
       if (response.ok) {
         const result = await response.json();
         console.log("Nutritional Details:", result);
-  
+
         // Extract the first serving's nutritional values
         const serving = result.food?.servings?.serving?.[0];
         if (serving) {
@@ -250,36 +311,36 @@ const HomeScreen = () => {
           const fat = parseFloat(serving.fat || 0).toFixed(1);
           const carbs = parseFloat(serving.carbohydrate || 0).toFixed(1);
           const protein = parseFloat(serving.protein || 0).toFixed(1);
-  
-          // Update the progress bar's state
+
+          // Update the n bar's state
           setNutrition((prevNutrition) => ({
             calories: Math.min(
               parseFloat((prevNutrition.calories + parseFloat(calories)).toFixed(1)),
-              maxNutrition.calories
+              // maxNutrition.calories
             ),
             fat: Math.min(
               parseFloat((prevNutrition.fat + parseFloat(fat)).toFixed(1)),
-              maxNutrition.fat
+              // maxNutrition.fat
             ),
             carbs: Math.min(
               parseFloat((prevNutrition.carbs + parseFloat(carbs)).toFixed(1)),
-              maxNutrition.carbs
+              // maxNutrition.carbs
             ),
             protein: Math.min(
               parseFloat((prevNutrition.protein + parseFloat(protein)).toFixed(1)),
-              maxNutrition.protein
+              // maxNutrition.protein
             ),
           }));
-          
-          
-  
+
+
+
           console.log("Updated Nutrition:", {
             calories,
             fat,
             carbs,
             protein,
           });
-  
+
           Alert.alert(
             "Food Added",
             `${item.food_name} added! (${calories} cal, ${fat}g fat, ${carbs}g carbs, ${protein}g protein)`
@@ -297,11 +358,9 @@ const HomeScreen = () => {
       Alert.alert("Error", "An unexpected error occurred while fetching nutritional details.");
     }
   };
-  
 
-  
-  
-  
+
+
   return (
     <View style={styles.container}>
       {/* Date Section */}
@@ -314,14 +373,14 @@ const HomeScreen = () => {
           <Text style={styles.navArrow}>&gt;</Text>
         </TouchableOpacity>
       </View>
-  
+
       {/* Nutritional Progress Section */}
       <View style={styles.progressSection}>
         {Object.keys(nutrition).map((key) => (
           <View key={key} style={styles.nutritionItem}>
             <Text>
               {key.charAt(0).toUpperCase() + key.slice(1)}:{" "}
-              {nutrition[key as keyof typeof nutrition].toFixed(1)} / {maxNutrition[key as keyof typeof maxNutrition]}
+              {nutrition[key as keyof typeof nutrition].toFixed(1)} / {maxNutrition[key as keyof typeof maxNutrition] || 'N/A'}
             </Text>
             <View style={styles.progressBar}>
               <View
@@ -340,8 +399,8 @@ const HomeScreen = () => {
         ))}
       </View>
 
-  
-      
+
+
       {/* Program Section */}
       <View style={styles.programSection}>
         <TouchableOpacity style={styles.programButton} onPress={fetchWorkoutProgram}>
@@ -359,7 +418,7 @@ const HomeScreen = () => {
           />
         </TouchableOpacity>
       </View>
-  
+
       {/* Add Meal and Add Food Buttons */}
       <View style={styles.addMealContainer}>
         <TouchableOpacity
@@ -368,10 +427,10 @@ const HomeScreen = () => {
         >
           <Text style={styles.addMealText}>+ Add Meal</Text>
         </TouchableOpacity>
-  
+
         <TouchableOpacity
           style={[styles.addMealButton, styles.addFoodButton]}
-          
+
           onPress={() => setFoodModalVisible(true)} // Opens the food suggestions modal
         >
           <Text style={styles.addMealText}>+ Add Food</Text>
@@ -403,7 +462,7 @@ const HomeScreen = () => {
               </TouchableOpacity>
             </View>
           </View>
-  
+
       {/* Food Suggestions Modal */}
       <Modal visible={foodModalVisible} animationType="slide" transparent={true}>
         <View style={styles.modalContainer}>
@@ -429,7 +488,7 @@ const HomeScreen = () => {
           </View>
         </View>
       </Modal>
-  
+
       {/* Workout Modal */}
       <Modal visible={workoutModalVisible} animationType="slide" transparent={true}>
         <View style={styles.modalContainer}>
@@ -458,7 +517,7 @@ const HomeScreen = () => {
       </Modal>
     </View>
   );
-  
+
 };
 
 const styles = StyleSheet.create({
@@ -577,8 +636,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginHorizontal: 10,
   },
-  
- 
+
+
   modalContainer: {
     flex: 1,
     justifyContent: "center",
@@ -597,14 +656,14 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 5,
   },
-  
+
   modalDescription: {
     fontSize: 14,
     color: "#555",
     marginBottom: 10,
     textAlign: "center", // Optional: Aligns the text to the center
   },
-  
+
   modalTitle: {
     fontSize: 18,
     fontWeight: "bold",
@@ -704,7 +763,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 18,
   },
-  
+
 });
 
 export default HomeScreen;

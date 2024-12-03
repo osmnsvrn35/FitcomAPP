@@ -46,7 +46,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 
         // Store the token in AsyncStorage
         await AsyncStorage.setItem('userToken', data.token);
-
+        await AsyncStorage.setItem('userId', data.user_id.toString());
         // Navigate to the main app
         router.replace("/tabs");
       } else {

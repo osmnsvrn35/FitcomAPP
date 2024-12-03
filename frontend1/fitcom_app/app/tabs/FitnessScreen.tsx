@@ -54,7 +54,7 @@ const FitnessScreen: React.FC = () => {
           headers: {
 
             Authorization: `Token ${token}`,
-            "Accept": "application/json",
+            Accept: "application/json",
 
             "Content-Type": "application/json",
           },
@@ -193,7 +193,7 @@ const FitnessScreen: React.FC = () => {
       <TextInput
         style={styles.searchInput}
         placeholder="Search exercises"
-        placeholderTextColor="#000" 
+        placeholderTextColor="#000"
         value={searchValue}
         onChangeText={handleSearchChange}
       />
@@ -350,11 +350,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     height: 100,
     overflow: "hidden",
-    
+
   },
   pickerItem: {
-    color: "#000", 
-    fontSize: 20, 
+    color: "#000",
+    fontSize: 20,
     fontWeight: "normal", // Adjust text weight if needed
     height: 100,
 
