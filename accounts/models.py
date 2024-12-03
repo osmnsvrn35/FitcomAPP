@@ -46,7 +46,7 @@ class User(AbstractUser):
 
     email = models.EmailField(max_length=80, unique=True)
     username = models.CharField(max_length=45)
-    weight = models.FloatField(blank=False)
+    weigth = models.FloatField(blank=False)
     height = models.FloatField(blank=False)
     gender = models.CharField(max_length=20, choices=GENDER_CHOICES, blank=False)
     userLevel = models.CharField(max_length=20, choices=ACTIVITY_LEVEL_CHOICES, blank=True, null=True)
