@@ -9,8 +9,8 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from .models import User,DailyUserProgress
 from .serializers import RegisterSerializer, UserSerializer,LoginSerializer, DailyUserProgressSerializer
-
-
+from django.utils.decorators import method_decorator,action
+from django.views.decorators.csrf import csrf_exempt
 class IsOwnerOrAdmin(BasePermission):
     def has_object_permission(self, request, view, obj):
         return request.user.is_staff or obj == request.user
@@ -74,16 +74,27 @@ class LogoutView(APIView):
 
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().order_by('id')
     serializer_class = UserSerializer
 
     def get_permissions(self):
-        if self.action == 'retrieve':
+        if self.action in ['retrieve', 'update', 'partial_update', 'me']:
             return [IsAuthenticated(), IsOwnerOrAdmin()]
-
+        elif self.action == 'list':
+            return [IsAdminUser()]
         return [IsAdminUser()]
 
+    def get_object(self):
+        obj = super().get_object()
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def me(self, request):
+        serializer = self.get_serializer(request.user)
+        return Response(serializer.data)
 
 
 
