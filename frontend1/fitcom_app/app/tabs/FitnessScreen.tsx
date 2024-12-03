@@ -24,6 +24,7 @@ interface Exercise {
   secondary_muscles?: string;
   instructions?: string;
 }
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const FitnessScreen = () => {
   const [exercises, setExercises] = useState<Exercise[]>([]);
@@ -37,12 +38,19 @@ const FitnessScreen = () => {
 
   const fetchExercises = async () => {
     try {
+      const token = await AsyncStorage.getItem('userToken');
+
+      if (!token) {
+        Alert.alert("Error", "You are not logged in. Please log in to view exercises.");
+        return;
+      }
+
       const response = await fetch(
         "https://fitcom-9fc3ecf39e06.herokuapp.com/api/exercises/",
         {
           method: "GET",
           headers: {
-            Authorization: "Token f97ba120683067b6f468b1c05db569c00b74ad97",
+            Authorization: `Token ${token}`,
             "Accept": "application/json",
             "Content-Type": "application/json",
           },
@@ -58,6 +66,7 @@ const FitnessScreen = () => {
       setFilteredExercises(data);
     } catch (error) {
       console.error("Error fetching exercises:", error);
+      Alert.alert("Error", "Failed to fetch exercises. Please try again later.");
     }
   };
 
@@ -99,7 +108,7 @@ const FitnessScreen = () => {
 
   const saveWorkoutProgram = async () => {
     if (selectedExercises.length === 0) {
-      alert("No exercises selected for the workout program.");
+      Alert.alert("Error", "No exercises selected for the workout program.");
       return;
     }
 
@@ -107,16 +116,22 @@ const FitnessScreen = () => {
       name: programName,
       description: programDescription,
       schedule_ids: selectedExercises.map((exercise) => exercise.exercise_id),
-
     };
 
     try {
+      const token = await AsyncStorage.getItem('userToken');
+
+      if (!token) {
+        Alert.alert("Error", "You are not logged in. Please log in to save your workout program.");
+        return;
+      }
+
       const response = await fetch(
         "https://fitcom-9fc3ecf39e06.herokuapp.com/api/user-custom-workout-programs/",
         {
           method: "POST",
           headers: {
-            Authorization: "Token f97ba120683067b6f468b1c05db569c00b74ad97",
+            Authorization: `Token ${token}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify(workoutProgram),
@@ -126,15 +141,15 @@ const FitnessScreen = () => {
       if (response.ok) {
         const responseData = await response.json();
         console.log("Program saved successfully:", responseData);
-        alert("Workout program saved successfully!");
+        Alert.alert("Success", "Workout program saved successfully!");
       } else {
         const errorData = await response.json();
         console.error("Error saving program:", errorData);
-        alert(errorData.message || "Failed to save the workout program.");
+        Alert.alert("Error", errorData.message || "Failed to save the workout program.");
       }
     } catch (error) {
       console.error("Error saving program:", error);
-      alert("An error occurred while saving the workout program.");
+      Alert.alert("Error", "An error occurred while saving the workout program.");
     } finally {
       setModalVisible(false);
       setProgramName("");
@@ -401,7 +416,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
-  
+
 });
 
 export default FitnessScreen;

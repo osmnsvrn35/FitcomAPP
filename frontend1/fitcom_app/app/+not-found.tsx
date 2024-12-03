@@ -10,7 +10,7 @@ export default function IndexPage() {
       <Text style={styles.title}>Welcome to Fitcom!</Text>
       <TouchableOpacity
         style={styles.button}
-        onPress={() => router.replace("./tabs/HomeScreen")}
+        onPress={() => router.replace("/LoginScreen")}
       >
         <Text style={styles.buttonText}>Go to Login</Text>
       </TouchableOpacity>
