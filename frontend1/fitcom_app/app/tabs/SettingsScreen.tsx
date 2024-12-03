@@ -40,10 +40,12 @@ const SettingsScreen = () => {
   const [exerciseModalVisible, setExerciseModalVisible] = useState(false);
   const [selectedProgram, setSelectedProgram] = useState<WorkoutProgram | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedProgramId, setSelectedProgramId] = useState<string | null>(null);
+
 
   const router = useRouter();
 
-  // Fetch user data on mount
+
   useEffect(() => {
     fetchUserData();
     fetchWorkoutPrograms();
@@ -52,27 +54,27 @@ const SettingsScreen = () => {
   // Fetch user data
   const fetchUserData = async () => {
     try {
-      setIsLoading(true); // Show loading message
+      setIsLoading(true);
       const token = await AsyncStorage.getItem("userToken");
-      const userId = await AsyncStorage.getItem("userId"); // Retrieve userId from AsyncStorage
-  
+      const userId = await AsyncStorage.getItem("userId");
+
       if (!token || !userId) {
         Alert.alert("Error", "You are not logged in.");
         router.replace("/LoginScreen");
         return;
       }
-  
+
       console.log(`Fetching user data for user ID: ${userId}...`);
       const response = await fetch(`https://fitcom-9fc3ecf39e06.herokuapp.com/api/users/${userId}/`, {
         headers: {
           Authorization: `Token ${token}`,
         },
       });
-  
+
       if (response.ok) {
         const data = await response.json();
         console.log("User data fetched:", data);
-        setUserData(data); // Save user data in the state
+        setUserData(data);
       } else {
         console.error("Failed to fetch user data:", await response.text());
         Alert.alert("Error", "Failed to fetch user data.");
@@ -81,13 +83,13 @@ const SettingsScreen = () => {
       console.error("Error fetching user data:", error);
       Alert.alert("Error", "An unexpected error occurred while fetching user data.");
     } finally {
-      setIsLoading(false); // Always hide the loading message
+      setIsLoading(false);
     }
   };
-  
-  
 
-  // Fetch workout programs
+
+
+
   const fetchWorkoutPrograms = async () => {
     try {
       const token = await AsyncStorage.getItem("userToken");
@@ -119,26 +121,27 @@ const SettingsScreen = () => {
     }
   };
 
-  // Fetch exercises for a specific workout program
+
+
   const fetchExercises = async (programId: string) => {
     try {
       const token = await AsyncStorage.getItem("userToken");
-  
+
       if (!token) {
         Alert.alert("Error", "You are not logged in.");
         return;
       }
-  
+
       console.log(`Fetching exercises for program ID: ${programId}`);
       const response = await fetch(
-        `https://fitcom-9fc3ecf39e06.herokuapp.com/api/user-custom-workout-programs/${programId}`,
+        `https://fitcom-9fc3ecf39e06.herokuapp.com/api/user-custom-workout-programs/${programId}/`,
         {
           headers: {
             Authorization: `Token ${token}`,
           },
         }
       );
-  
+
       if (response.ok) {
         const data = await response.json();
         console.log("Exercises fetched:", data.schedule);
@@ -153,15 +156,69 @@ const SettingsScreen = () => {
       Alert.alert("Error", "An unexpected error occurred while fetching exercises.");
     }
   };
-  
+
+  const selectWorkoutProgram = async (programId: string) => {
+    try {
+      const token = await AsyncStorage.getItem("userToken");
+      const userId = await AsyncStorage.getItem("userId");
+
+      if (!token || !userId) {
+        Alert.alert("Error", "You are not logged in.");
+        return;
+      }
+
+      const response = await fetch(
+        `https://fitcom-9fc3ecf39e06.herokuapp.com/api/users/${userId}/`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Token ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ selected_program_id: programId }),
+        }
+      );
+
+      if (response.ok) {
+        setSelectedProgramId(programId);
+      } else {
+        Alert.alert("Error", "Failed to select workout program.");
+      }
+    } catch (error) {
+      console.error("Error selecting workout program:", error);
+      Alert.alert("Error", "An unexpected error occurred while selecting the workout program.");
+    }
+  };
+
 
   const renderProgramItem = ({ item }: { item: WorkoutProgram }) => (
-    <TouchableOpacity
-      style={styles.listItem}
-      onPress={() => fetchExercises(item.program_id)}
-    >
-      <Text style={styles.listItemText}>{item.name}</Text>
-    </TouchableOpacity>
+    <View style={styles.listItem}>
+      <View style={styles.programInfo}>
+        <Text style={styles.programName}>{item.name}</Text>
+        {item.description && (
+          <Text style={styles.programDescription}>{item.description}</Text>
+        )}
+      </View>
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity
+          style={styles.detailsButton}
+          onPress={() => fetchExercises(item.program_id)}
+        >
+          <Text style={styles.detailsButtonText}>Details</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.selectButton,
+            selectedProgramId === item.program_id && styles.selectedButton
+          ]}
+          onPress={() => selectWorkoutProgram(item.program_id)}
+        >
+          <Text style={styles.selectButtonText}>
+            {selectedProgramId === item.program_id ? "Selected" : "Select"}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 
   const renderExerciseItem = (exercise: Exercise) => (
@@ -190,7 +247,7 @@ const SettingsScreen = () => {
       )}
     </View>
   );
-  
+
 
   const handleLogout = async () => {
     try {
@@ -250,7 +307,6 @@ const SettingsScreen = () => {
           <Text style={styles.noDataText}>No Workout Plans Found</Text>
         )}
       </View>
-
       {/* Modal for Exercises */}
       <Modal visible={exerciseModalVisible} transparent animationType="slide">
         <View style={styles.modalContainer}>
@@ -288,7 +344,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f4f4f4",
   },
-  
+  programInfo: {
+    marginBottom: 10,
+  },
+
   loadingText: {
     fontSize: 16,
     color: "#888",
@@ -324,7 +383,7 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "#fff",
   },
-  
+
   noDataText:{
     color: "#555",
 
@@ -367,10 +426,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#ddd",
   },
-  listItemText: {
-    fontSize: 16,
-    color: "#333",
-  },
+
   exerciseCard: {
     marginBottom: 10,
     padding: 15,
@@ -449,6 +505,50 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     fontWeight: "bold",
     fontSize: 16,
+  },
+  programName: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 5,
+  },
+
+  programNameButton: {
+    flex: 1,
+  },
+  programDescription: {
+    fontSize: 14,
+    color: "#666",
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  detailsButton: {
+    backgroundColor: "#007bff",
+    padding: 8,
+    borderRadius: 5,
+    flex: 1,
+    marginRight: 10,
+  },
+  detailsButtonText: {
+    color: "white",
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  selectButton: {
+    backgroundColor: "#4CAF50",
+    padding: 8,
+    borderRadius: 5,
+    flex: 1,
+  },
+  selectedButton: {
+    backgroundColor: "#45a049",
+  },
+  selectButtonText: {
+    color: "white",
+    fontWeight: "bold",
+    textAlign: "center",
   },
 });
 

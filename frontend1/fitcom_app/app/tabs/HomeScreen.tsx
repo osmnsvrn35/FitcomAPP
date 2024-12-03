@@ -32,12 +32,7 @@ const HomeScreen = () => {
   const [workoutModalVisible, setWorkoutModalVisible] = useState(false);
   const [meal, setMeal] = useState({ calories: "", fat: "", carbs: "", protein: "" });
   const [waterLevel, setWaterLevel] = useState(1000);
-  const [nutrition, setNutrition] = useState({
-    calories: 0,
-    fat: 0,
-    carbs: 0,
-    protein: 0,
-  });
+
 
 
 
@@ -46,12 +41,20 @@ const HomeScreen = () => {
   const [foodList, setFoodList] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const [maxNutrition, setMaxNutrition] = useState<{
-    calories?: number;
-    fat?: number;
-    carbs?: number;
-    protein?: number;
-  }>({});
+  const [maxNutrition, setMaxNutrition] = useState({
+    calories: 0,
+    fat: 0,
+    carbs: 0,
+    protein: 0,
+  });
+  
+  const [nutrition, setNutrition] = useState({
+    calories: 0,
+    fat: 0,
+    carbs: 0,
+    protein: 0,
+  });
+  
 
   useEffect(() => {
     const today = new Date();
@@ -64,7 +67,7 @@ const HomeScreen = () => {
       })
     );
   }, []);
-
+  
   const adjustWater = (amount: number) => {
     setWaterLevel((prev) => Math.max(0, Math.min(3000, prev + amount)));
   };
@@ -74,9 +77,11 @@ const HomeScreen = () => {
   };
 
   const getProgressPercentage = (current: number, max: number | undefined) => {
-    if (!max) return 0;
-    return (current / max) * 100;
+    if (!max || max <= 0 || isNaN(current)) return 0;
+    const percentage = (current / max) * 100;
+    return percentage > 100 ? 100 : percentage;    
   };
+  
 
   const fetchWorkoutProgram = async () => {
     try {
@@ -236,19 +241,21 @@ const HomeScreen = () => {
       if (response.ok) {
         const userData = await response.json();
         setMaxNutrition({
-          calories: userData.kcal_needs,
-          fat: userData.fat_needs,
-          carbs: userData.carbs_needs,
-          protein: userData.protein_needs,
+          calories: userData.kcal_needs || 0,
+          fat: userData.fat_needs || 0,
+          carbs: userData.carbs_needs || 0,
+          protein: userData.protein_needs || 0,
         });
+        
 
 
         setNutrition({
-          calories: userData.caloriesGoal,
-          fat: userData.fatGoal,
-          carbs: userData.carbsGoal,
-          protein: userData.proteinGoal,
+          calories: userData.caloriesGoal || 0, // Default to 0 if undefined
+          fat: userData.fatGoal || 0,
+          carbs: userData.carbsGoal || 0,
+          protein: userData.proteinGoal || 0,
         });
+        
       } else {
         Alert.alert("Error", "Failed to fetch user data.");
       }
@@ -259,17 +266,17 @@ const HomeScreen = () => {
 
   const handleFoodSelection = async (item: any) => {
     console.log("Selected Food Item:", item);
-
+  
     const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     let nonce = "";
     for (let i = 0; i < 16; i++) {
       nonce += charset.charAt(Math.floor(Math.random() * charset.length));
     }
     const timestamp = Math.floor(Date.now() / 1000);
-
+  
     const consumerKey = "2e7307812ba443c0948b842ee0f23e21";
     const consumerSecret = "f076f0475ec3425c83630d5d3f1fa204";
-
+  
     const params: Record<string, string> = {
       method: "food.get",
       food_id: item.food_id,
@@ -280,75 +287,81 @@ const HomeScreen = () => {
       oauth_nonce: nonce,
       oauth_version: "1.0",
     };
-
+  
     const sortedParams = Object.keys(params)
       .sort()
       .map((key) => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
       .join("&");
-
+  
     const baseString = `GET&${encodeURIComponent(
       "https://platform.fatsecret.com/rest/server.api"
     )}&${encodeURIComponent(sortedParams)}`;
-
+  
     const signingKey = `${encodeURIComponent(consumerSecret)}&`;
     const oauthSignature = CryptoJS.HmacSHA1(baseString, signingKey).toString(CryptoJS.enc.Base64);
-
+  
     params.oauth_signature = oauthSignature;
-
+  
     const apiUrl = `https://platform.fatsecret.com/rest/server.api?${new URLSearchParams(params).toString()}`;
     const proxyUrl = `http://localhost:8092/proxy?url=${encodeURIComponent(apiUrl)}`;
-
+  
     try {
       const response = await fetch(proxyUrl);
       if (response.ok) {
         const result = await response.json();
-        console.log("Nutritional Details:", result);
-
-        // Extract the first serving's nutritional values
-        const serving = result.food?.servings?.serving?.[0];
-        if (serving) {
-          // Parse and round values to 1 decimal place
-          const calories = parseFloat(serving.calories || 0).toFixed(1);
-          const fat = parseFloat(serving.fat || 0).toFixed(1);
-          const carbs = parseFloat(serving.carbohydrate || 0).toFixed(1);
-          const protein = parseFloat(serving.protein || 0).toFixed(1);
-
-          // Update the n bar's state
-          setNutrition((prevNutrition) => ({
-            calories: Math.min(
-              parseFloat((prevNutrition.calories + parseFloat(calories)).toFixed(1)),
-              // maxNutrition.calories
-            ),
-            fat: Math.min(
-              parseFloat((prevNutrition.fat + parseFloat(fat)).toFixed(1)),
-              // maxNutrition.fat
-            ),
-            carbs: Math.min(
-              parseFloat((prevNutrition.carbs + parseFloat(carbs)).toFixed(1)),
-              // maxNutrition.carbs
-            ),
-            protein: Math.min(
-              parseFloat((prevNutrition.protein + parseFloat(protein)).toFixed(1)),
-              // maxNutrition.protein
-            ),
-          }));
-
-
-
-          console.log("Updated Nutrition:", {
-            calories,
-            fat,
-            carbs,
-            protein,
-          });
-
-          Alert.alert(
-            "Food Added",
-            `${item.food_name} added! (${calories} cal, ${fat}g fat, ${carbs}g carbs, ${protein}g protein)`
-          );
-        } else {
+        console.log("Full API Result:", result);
+  
+        const servings = result.food?.servings?.serving;
+  
+        if (!servings) {
           Alert.alert("Error", "No serving information found for this food.");
+          return;
         }
+  
+        // Handle both single and array cases
+        const serving = Array.isArray(servings) ? servings[0] : servings;
+  
+        // Parse and round values to 1 decimal place
+        const calories = parseFloat(serving.calories || "0").toFixed(1);
+        const fat = parseFloat(serving.fat || "0").toFixed(1);
+        const carbs = parseFloat(serving.carbohydrate || "0").toFixed(1);
+        const protein = parseFloat(serving.protein || "0").toFixed(1);
+  
+        // Update nutrition state
+        setNutrition((prevNutrition) => ({
+          calories: Math.min(
+            prevNutrition.calories + (parseFloat(calories) || 0),
+            maxNutrition.calories || Infinity
+          ),
+          fat: Math.min(
+            prevNutrition.fat + (parseFloat(fat) || 0),
+            maxNutrition.fat || Infinity
+          ),
+          carbs: Math.min(
+            prevNutrition.carbs + (parseFloat(carbs) || 0),
+            maxNutrition.carbs || Infinity
+          ),
+          protein: Math.min(
+            prevNutrition.protein + (parseFloat(protein) || 0),
+            maxNutrition.protein || Infinity
+          ),
+        }));
+        
+        
+        
+        
+  
+        console.log("Updated Nutrition:", {
+          calories,
+          fat,
+          carbs,
+          protein,
+        });
+  
+        Alert.alert(
+          "Food Added",
+          `${item.food_name} added! (${calories} cal, ${fat}g fat, ${carbs}g carbs, ${protein}g protein)`
+        );
       } else {
         const error = await response.json();
         console.error("Error fetching nutritional details:", error);
@@ -359,7 +372,42 @@ const HomeScreen = () => {
       Alert.alert("Error", "An unexpected error occurred while fetching nutritional details.");
     }
   };
-
+  
+    const addMealToProgress = () => {
+      // Parse input values to numbers (default to 0 if invalid)
+      const calories = parseFloat(meal.calories) || 0;
+      const fat = parseFloat(meal.fat) || 0;
+      const carbs = parseFloat(meal.carbs) || 0;
+      const protein = parseFloat(meal.protein) || 0;
+    
+      // Update the nutrition progress
+      setNutrition((prevNutrition) => ({
+        calories: Math.min(
+          prevNutrition.calories + calories,
+          maxNutrition.calories || Infinity
+        ),
+        fat: Math.min(
+          prevNutrition.fat + fat,
+          maxNutrition.fat || Infinity
+        ),
+        carbs: Math.min(
+          prevNutrition.carbs + carbs,
+          maxNutrition.carbs || Infinity
+        ),
+        protein: Math.min(
+          prevNutrition.protein + protein,
+          maxNutrition.protein || Infinity
+        ),
+      }));
+    
+      // Clear input fields and close the modal
+      setMeal({ calories: "", fat: "", carbs: "", protein: "" });
+      setMealModalVisible(false);
+    
+      // Notify the user
+      Alert.alert("Meal Added", "Your meal has been added to today's progress!");
+    };
+  
   return (
     <View style={styles.container}>
       {/* Date Section */}
@@ -374,32 +422,41 @@ const HomeScreen = () => {
       </View>
 
       {/* Nutritional Progress Section */}
-        <View style={styles.progressSection}>
-          {Object.keys(nutrition).map((key) => {
-            // Safely get the current and max values
-            const currentValue = nutrition[key as keyof typeof nutrition] || 0; // Default to 0
-            const maxValue = maxNutrition[key as keyof typeof maxNutrition] || 0; // Default to 0
+      {maxNutrition.calories ? (
+  <View style={styles.progressSection}>
+    {Object.keys(nutrition).map((key) => {
+      const currentValue = nutrition[key as keyof typeof nutrition] || 0;
+      const maxValue = maxNutrition[key as keyof typeof maxNutrition] || 0;
 
-            return (
-              <View key={key} style={styles.nutritionItem}>
-                <Text>
-                  {key.charAt(0).toUpperCase() + key.slice(1)}: {currentValue.toFixed(1)} /{" "}
-                  {maxValue ? maxValue.toFixed(1) : "N/A"}
-                </Text>
-                <View style={styles.progressBar}>
-                  <View
-                    style={[
-                      styles.progressFill,
-                      {
-                        width: `${getProgressPercentage(currentValue, maxValue)}%`,
-                      },
-                    ]}
-                  />
-                </View>
-              </View>
-            );
-          })}
+      console.log(`${key} progress:`, {
+        currentValue,
+        maxValue,
+        percentage: getProgressPercentage(currentValue, maxValue),
+      });
+
+      return (
+        <View key={key} style={styles.nutritionItem}>
+          <Text>
+            {key.charAt(0).toUpperCase() + key.slice(1)}:{" "}
+            {currentValue.toFixed(1)} /{" "}
+            {maxValue ? maxValue.toFixed(1) : "N/A"}
+          </Text>
+          <View style={styles.progressBar}>
+            <View
+              style={[
+                styles.progressFill,
+                { width: `${getProgressPercentage(currentValue, maxValue)}%` },
+              ]}
+            />
+          </View>
         </View>
+      );
+    })}
+  </View>
+) : (
+  <Text>Loading nutrition data...</Text>
+)}
+
 
 
 
@@ -429,6 +486,68 @@ const HomeScreen = () => {
         >
           <Text style={styles.addMealText}>+ Add Meal</Text>
         </TouchableOpacity>
+        <Modal
+            visible={mealModalVisible}
+            animationType="slide"
+            transparent={true}
+          >
+            <View style={styles.modalContainer}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Add Meal</Text>
+
+                {/* Input fields for meal details */}
+                <TextInput
+                  style={styles.input}
+                  placeholder="Calories"
+                  placeholderTextColor="#000"
+                  keyboardType="numeric"
+                  value={meal.calories}
+                  onChangeText={(value) => handleInputChange("calories", value)}
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Fat (g)"
+                  placeholderTextColor="#000"
+                  keyboardType="numeric"
+                  value={meal.fat}
+                  onChangeText={(value) => handleInputChange("fat", value)}
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Carbs (g)"
+                  placeholderTextColor="#000"
+                  keyboardType="numeric"
+                  value={meal.carbs}
+                  onChangeText={(value) => handleInputChange("carbs", value)}
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Protein (g)"
+                  placeholderTextColor="#000"
+                  keyboardType="numeric"
+                  value={meal.protein}
+                  onChangeText={(value) => handleInputChange("protein", value)}
+                />
+
+                {/* Add Meal Button */}
+                <TouchableOpacity
+                  style={styles.modalButton}
+                  onPress={addMealToProgress} // Add meal to daily progress
+                >
+                  <Text style={styles.modalButtonText}>Add Meal</Text>
+                </TouchableOpacity>
+
+                {/* Close Modal Button */}
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.closeButton]}
+                  onPress={() => setMealModalVisible(false)} // Close the modal
+                >
+                  <Text style={styles.modalButtonText}>Close</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+
 
         <TouchableOpacity
           style={[styles.addMealButton, styles.addFoodButton]}
@@ -764,6 +883,8 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
     fontSize: 18,
+  },closeButton: {
+    backgroundColor: "#FF6347", 
   },
 
 });

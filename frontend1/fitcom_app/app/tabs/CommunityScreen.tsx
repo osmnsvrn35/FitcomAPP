@@ -65,6 +65,7 @@ const CommunityScreen = () => {
 
   // Like a post
   const likePost = async (postId: string): Promise<void> => {
+    
     try {
       console.log(`Liking post with ID: ${postId}`);
       const url = `https://fitcom-9fc3ecf39e06.herokuapp.com/api/posts/${postId}/`;
