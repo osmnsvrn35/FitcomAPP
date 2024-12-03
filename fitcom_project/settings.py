@@ -76,7 +76,8 @@ AUTH_USER_MODEL = 'accounts.User'
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8081",
     "http://127.0.0.1:8081",
-    "http://fitcom-9fc3ecf39e06.herokuapp.com"
+    "http://fitcom-9fc3ecf39e06.herokuapp.com",
+    'http://192.168.0.159:8081',
 ]
 CORS_ALLOWED_HOSTS = [
     "http://fitcom-9fc3ecf39e06.herokuapp.com",
