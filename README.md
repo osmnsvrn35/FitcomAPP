@@ -35,6 +35,6 @@
 </ul><ul>
 <li>API is deployed on Heroku, ensuring both reliability and scalability for robust backend functionality. You can access the API at: https://fitcom-9fc3ecf39e06.herokuapp.com/api/</li>
 </ul><h2>Project Status</h2>
-<hr><p>he Fitcom project is currently in progress, focusing on enhancing the frontend interface for better user experience, optimizing backend endpoints for robust performance, and conducting comprehensive testing to ensure functionality and reliability.</p><ul>
+<hr><p>The Fitcom project is currently in progress, focusing on enhancing the frontend interface for better user experience, optimizing backend endpoints for robust performance, and conducting comprehensive testing to ensure functionality and reliability.</p><ul>
 <li>Many Thanks to our supervisor dr.inz. Grzegorz Ostrek</li>
 </ul>
