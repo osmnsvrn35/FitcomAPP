@@ -39,3 +39,18 @@
 <hr><ul>
 <li>Many Thanks to our supervisor dr.inz. Grzegorz Ostrek</li>
 </ul>
+
+![image](https://github.com/user-attachments/assets/af2083b3-9965-4c8f-be73-d016157bb0f5)
+![image](https://github.com/user-attachments/assets/de351feb-d070-434c-b77d-d97eb79c393b)
+![image](https://github.com/user-attachments/assets/1d7106a0-7415-47a6-81ef-f14aeae756db)
+![image](https://github.com/user-attachments/assets/48eb6999-0004-4953-a40d-65d9c332fec8)
+![image](https://github.com/user-attachments/assets/82a56c87-f691-4453-8e3d-27f79422ec3f)
+![image](https://github.com/user-attachments/assets/0454d05a-c60e-4919-b463-2bea882034d4)
+![image](https://github.com/user-attachments/assets/5e828887-0eb8-4e5c-bb54-c21ea7ba82b6)
+
+
+
+
+
+
+
