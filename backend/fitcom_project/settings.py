@@ -71,7 +71,7 @@ SWAGGER_SETTINGS = {
 }
 
 
-AUTH_USER_MODEL = 'backend.accounts.User'
+AUTH_USER_MODEL = 'accounts.User'
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8081",
