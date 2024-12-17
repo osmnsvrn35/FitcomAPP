@@ -21,7 +21,7 @@ jobs:
     - name: Install backend dependencies
       run: |
         python -m venv venv
-        . ./venv/bin/activate
+        . ../venv/bin/activate
         pip install -r requirements.txt
         cd backend
 
