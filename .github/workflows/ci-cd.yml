@@ -20,10 +20,10 @@ jobs:
 
     - name: Install backend dependencies
       run: |
-        cd backend
         python -m venv venv
         source venv/bin/activate
         pip install -r requirements.txt
+        cd backend
 
     - name: Run backend tests
       working-directory: ./backend
