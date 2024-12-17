@@ -71,7 +71,7 @@ SWAGGER_SETTINGS = {
 }
 
 
-AUTH_USER_MODEL = 'accounts.User'
+AUTH_USER_MODEL = 'backend.accounts.User'
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8081",
@@ -105,7 +105,7 @@ MIDDLEWARE = [
     'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-ROOT_URLCONF = 'fitcom_project.urls'
+ROOT_URLCONF = 'backend.fitcom_project.urls'
 
 TEMPLATES = [
     {
