@@ -123,7 +123,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'fitcom_project.wsgi.application'
+WSGI_APPLICATION = 'backend.fitcom_project.wsgi.application'
 
 
 # Database
