@@ -51,7 +51,6 @@ const SettingsScreen = () => {
     fetchWorkoutPrograms();
   }, []);
 
-  // Fetch user data
   const fetchUserData = async () => {
     try {
       setIsLoading(true);

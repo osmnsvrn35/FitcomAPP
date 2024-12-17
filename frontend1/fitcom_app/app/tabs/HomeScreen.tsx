@@ -34,8 +34,6 @@ const HomeScreen = () => {
   const [waterLevel, setWaterLevel] = useState(1000);
 
 
-
-
   const [selectedWorkout, setSelectedWorkout] = useState<WorkoutProgram | null>(null);
   const [foodModalVisible, setFoodModalVisible] = useState(false);
   const [foodList, setFoodList] = useState([]);
@@ -145,17 +143,22 @@ const HomeScreen = () => {
     }
   };
 
+  const generateNonce = () => {
+    const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let nonce = Date.now().toString(); // Add timestamp to ensure uniqueness
+    for (let i = 0; i < 8; i++) {
+      nonce += charset.charAt(Math.floor(Math.random() * charset.length));
+    }
+    return nonce;
+  };
+
   const fetchFoodSuggestions = async (query: string) => {
     if (!query) {
       setFoodList([]);
       return;
     }
 
-    const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    let nonce = "";
-    for (let i = 0; i < 16; i++) {
-      nonce += charset.charAt(Math.floor(Math.random() * charset.length));
-    }
+    const nonce = generateNonce()
     const timestamp = Math.floor(Date.now() / 1000);
 
     const consumerKey = "2e7307812ba443c0948b842ee0f23e21";
@@ -188,23 +191,36 @@ const HomeScreen = () => {
     params.oauth_signature = oauthSignature;
 
     const apiUrl = `https://platform.fatsecret.com/rest/server.api?${new URLSearchParams(params).toString()}`;
-
-    const proxyUrl = `http://localhost:8092/proxy?url=${encodeURIComponent(apiUrl)}`;
+    const proxyUrl = `http://192.168.0.159:8092/proxy?url=${encodeURIComponent(apiUrl)}`;
 
     try {
-      const response = await fetch(proxyUrl);
+
+      const proxyCheckResponse = await fetch(proxyUrl).catch(() => null);
+      if (!proxyCheckResponse || !proxyCheckResponse.ok) {
+        throw new Error('Proxy server is not running');
+      }
+
+      const controller = new AbortController();
+
+      console.log('Fetching food suggestions...');
+      const response = await fetch(proxyUrl, { signal: controller.signal });
 
       if (response.ok) {
         const result = await response.json();
         console.log("API Response:", result);
-        setFoodList(result.foods.food || []);
+        if (result.foods && result.foods.food) {
+          setFoodList(Array.isArray(result.foods.food) ? result.foods.food : [result.foods.food]);
+        } else {
+          setFoodList([]);
+        }
       } else {
-        const error = await response.json();
-        Alert.alert("Error", error.message || "Failed to fetch food suggestions.");
+        console.error("Error response from server:", await response.text());
+        setFoodList([]);
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error("Error fetching food suggestions:", error);
-      Alert.alert("Error", "An unexpected error occurred while fetching food suggestions.");
+      setFoodList([]);
     }
   };
 
@@ -335,8 +351,8 @@ const HomeScreen = () => {
     params.oauth_signature = oauthSignature;
 
     const apiUrl = `https://platform.fatsecret.com/rest/server.api?${new URLSearchParams(params).toString()}`;
-    const proxyUrl = `http://localhost:8092/proxy?url=${encodeURIComponent(apiUrl)}`;
-
+    const proxyServerAddress = '192.168.0.159';
+    const proxyUrl = `http://${proxyServerAddress}:8092/proxy?url=${encodeURIComponent(apiUrl)}`;
     try {
       const response = await fetch(proxyUrl);
       if (response.ok) {

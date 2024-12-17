@@ -2,15 +2,17 @@
   "name": "fitcom_app",
   "main": "expo-router/entry",
   "version": "1.0.0",
-  "proxy": "http://localhost:8080",
+  "proxy": "http://192.168.0.159:8092",
   "scripts": {
-    "start": "expo start",
+    "start": "concurrently \"node proxy.js\" \"expo start\"",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
     "test": "jest --watchAll",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "proxy": "node proxy.js",
+    "start-with-proxy": "concurrently \"npm run proxy\" \"expo start\""
   },
   "jest": {
     "preset": "jest-expo"
@@ -43,14 +45,16 @@
     "expo-status-bar": "~2.0.0",
     "expo-system-ui": "~4.0.4",
     "expo-web-browser": "~14.0.1",
-    "express": "^4.21.1",
+    "express": "^4.21.2",
     "jest-expo": "~52.0.2",
     "media-library": "^1.2.4",
     "node": "^20.18.1",
+    "node-fetch": "^2.7.0",
     "oauth-1.0a": "^2.2.6",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-native": "^0.76.3",
+    "react-native-dotenv": "^3.4.11",
     "react-native-gesture-handler": "~2.20.2",
     "react-native-helmet-async": "^2.0.4",
     "react-native-image-picker": "^7.2.2",
@@ -72,6 +76,7 @@
     "@types/react-navigation": "^3.0.8",
     "@types/react-test-renderer": "^18.0.7",
     "babel-plugin-module-resolver": "^5.0.2",
+    "concurrently": "^9.1.0",
     "expo-module-scripts": "^4.0.2",
     "jest-expo": "~52.0.2",
     "react-test-renderer": "^18.3.1",
@@ -82,6 +87,9 @@
       "reactNativeDirectoryCheck": {
         "listUnknownPackages": false
       }
+    },
+    "extra": {
+      "proxy": "http://192.168.0.159:8092"
     }
   },
   "private": true
