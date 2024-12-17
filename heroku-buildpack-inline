@@ -1,8 +1,0 @@
-#!/bin/bash
-
-
-mkdir -p backend
-
-
-mv fitcom_project backend/
-

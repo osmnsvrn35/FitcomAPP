@@ -1,0 +1,27 @@
+# bin/compile <build-dir> <cache-dir> <env-dir>
+
+# Fail fast
+set -e
+
+# Debug
+set -x
+
+# Parse parameters
+BUILD_DIR=$1
+CACHE_DIR=$2
+ENV_DIR=$3
+
+# Change to the build directory
+cd $BUILD_DIR
+
+# Install Python dependencies
+pip install -r requirements.txt
+
+# Collect static files
+python backend/manage.py collectstatic --noinput
+
+# Run database migrations
+python backend/manage.py migrate
+
+# Print a message
+echo "Compilation finished!"
