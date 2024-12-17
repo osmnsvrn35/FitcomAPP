@@ -56,7 +56,11 @@ class User(AbstractUser):
     userLevel = models.CharField(max_length=20, choices=ACTIVITY_LEVEL_CHOICES,blank=True)
     profilePicture = models.URLField(max_length=200, null=True, blank=True)
     age = models.PositiveIntegerField(null=True, blank=True)
-    saved_workout_programs = models.ManyToManyField(UserCustomWorkoutProgram, blank=True, related_name='saved_by_users')
+    saved_workout_programs = models.ManyToManyField(
+        'fitcom_app.UserCustomWorkoutProgram',
+        blank=True,
+        related_name='saved_by_users'
+    )
 
     selected_program_type = models.ForeignKey(ContentType, on_delete=models.SET_NULL, null=True, blank=True)
     selected_program_id = models.UUIDField(null=True, blank=True)

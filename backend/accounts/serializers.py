@@ -1,16 +1,11 @@
 # serializers.py
-
 from rest_framework import serializers
 from rest_framework.validators import ValidationError
 from .models import User, DailyUserProgress
 from rest_framework.authtoken.models import Token
-from fitcom_app.models import WorkoutProgram
+from fitcom_app.models import WorkoutProgram, UserCustomWorkoutProgram
+from fitcom_app.serializers import WorkoutProgramSerializer, UserCustomWorkoutProgramSerializer
 from django.contrib.contenttypes.models import ContentType
-
-from rest_framework import serializers
-from rest_framework.validators import ValidationError
-from .models import User
-from rest_framework.authtoken.models import Token
 
 class RegisterSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(max_length=80)
@@ -65,16 +60,28 @@ class LoginSerializer(serializers.Serializer):
 
 class UserSerializer(serializers.ModelSerializer):
     selected_workout_program = serializers.SerializerMethodField()
+    saved_workout_programs = UserCustomWorkoutProgramSerializer(many=True, read_only=True)
 
     class Meta:
         model = User
-        fields = '__all__'
+        fields = ['id', 'username', 'email', 'weight', 'height', 'gender', 'userLevel',
+                  'profilePicture', 'age', 'selected_workout_program',
+                  'saved_workout_programs',
+                  'water_needs', 'kcal_needs', 'carbs_needs', 'protein_needs', 'fat_needs']
 
     def get_selected_workout_program(self, obj):
         if obj.selected_workout_program:
+            if isinstance(obj.selected_workout_program, WorkoutProgram):
+                serializer = WorkoutProgramSerializer(obj.selected_workout_program)
+            elif isinstance(obj.selected_workout_program, UserCustomWorkoutProgram):
+                serializer = UserCustomWorkoutProgramSerializer(obj.selected_workout_program)
+            else:
+                return None
+
             return {
                 "program_id": obj.selected_workout_program.pk,
                 "program_type": ContentType.objects.get_for_model(obj.selected_workout_program).model,
+                **serializer.data
             }
         return None
 

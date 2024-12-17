@@ -2,6 +2,8 @@ from rest_framework import viewsets, mixins
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser,IsAuthenticatedOrReadOnly
 from .models import Exercise, UserCustomWorkoutProgram, WorkoutProgram,Post,Comment
 from .serializers import ExerciseSerializer, UserCustomWorkoutProgramSerializer, WorkoutProgramSerializer,PostSerializer,CommentSerializer
+from rest_framework.decorators import action
+
 
 class ExerciseViewSet(viewsets.ModelViewSet):
     queryset = Exercise.objects.all()
@@ -28,27 +30,20 @@ class WorkoutProgramViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
             self.permission_classes = [AllowAny]
-        else:
+        elif self.action in ['create', 'update', 'partial_update', 'destroy']:
             self.permission_classes = [IsAuthenticated]
-        return super().get_permissions()
-
-    def perform_create(self, serializer):
-        workout_program = serializer.save(user=self.request.user)
-        self.request.user.saved_workout_programs.add(workout_program)  # Save to user's profile
-
-
-
-
-class WorkoutProgramViewSet(viewsets.ModelViewSet):
-    queryset = WorkoutProgram.objects.all()
-    serializer_class = WorkoutProgramSerializer
-
-    def get_permissions(self):
-        if self.action in ['list', 'retrieve']:
-            self.permission_classes = [AllowAny]
         else:
             self.permission_classes = [IsAdminUser]
         return super().get_permissions()
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    @action(detail=True, methods=['post'])
+    def save_to_profile(self, request, pk=None):
+        workout_program = self.get_object()
+        request.user.saved_workout_programs.add(workout_program)
+        return Response({'status': 'workout program saved to profile'})
 
 
 
@@ -58,7 +53,10 @@ class UserCustomWorkoutProgramViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        if getattr(self, 'swagger_fake_view', False): return UserCustomWorkoutProgram.objects.none()
+        if getattr(self, 'swagger_fake_view', False):
+            return UserCustomWorkoutProgram.objects.none()
+        return UserCustomWorkoutProgram.objects.filter(user=self.request.user)
+
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)

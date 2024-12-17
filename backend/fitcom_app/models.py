@@ -1,9 +1,9 @@
 import uuid
 from django.db import models
 from statistics import mean
-
 from django.forms import ValidationError
 from django.utils import timezone
+from django.conf import settings
 
 
 class Level(models.TextChoices):
@@ -60,10 +60,18 @@ class AbstractWorkoutProgram(models.Model):
                 self.level = Level.EXPERT
 
 class WorkoutProgram(AbstractWorkoutProgram):
-    pass
+    is_admin_created = models.BooleanField(default=True)
+    def save(self, *args, **kwargs):
+        if not self.pk:
+            self.is_admin_created = True
+        super().save(*args, **kwargs)
 
 class UserCustomWorkoutProgram(AbstractWorkoutProgram):
-    user = models.ForeignKey("accounts.User", on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='custom_programs')
+    def save(self, *args, **kwargs):
+        if not self.pk:
+            self.is_admin_created = False
+        super().save(*args, **kwargs)
 
 class Comment(models.Model):
     comment_id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True, editable=False)
