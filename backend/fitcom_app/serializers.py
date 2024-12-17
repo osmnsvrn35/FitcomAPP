@@ -11,33 +11,30 @@ class ExerciseSerializer(serializers.ModelSerializer):
 class UserCustomWorkoutProgramSerializer(serializers.ModelSerializer):
     schedule = ExerciseSerializer(many=True, read_only=True)
     schedule_ids = serializers.PrimaryKeyRelatedField(queryset=Exercise.objects.all(), many=True, write_only=True)
-    user = serializers.PrimaryKeyRelatedField(read_only=True)
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     class Meta:
         model = UserCustomWorkoutProgram
         fields = ['program_id', 'name', 'description', 'schedule', 'schedule_ids', 'level', 'user']
-        read_only_fields = ['level']
+        read_only_fields = ['program_id', 'level']
         ref_name = "UserCustomExercise"
 
     def create(self, validated_data):
         schedule_ids = validated_data.pop('schedule_ids')
         custom_program = UserCustomWorkoutProgram.objects.create(**validated_data)
         custom_program.schedule.set(schedule_ids)
-        custom_program.save()
+        custom_program.update_level()
         return custom_program
 
     def update(self, instance, validated_data):
         schedule_ids = validated_data.pop('schedule_ids', None)
-        instance.name = validated_data.get('name', instance.name)
-        instance.description = validated_data.get('description', instance.description)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
         instance.save()
-
         if schedule_ids:
             instance.schedule.set(schedule_ids)
-
         instance.update_level()
         return instance
-
 
 
 class WorkoutProgramSerializer(serializers.ModelSerializer):

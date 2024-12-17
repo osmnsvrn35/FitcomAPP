@@ -12,6 +12,7 @@ from .models import User, DailyUserProgress
 from .serializers import RegisterSerializer, UserSerializer, LoginSerializer, DailyUserProgressSerializer
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
+
 class IsOwnerOrAdmin(BasePermission):
     def has_object_permission(self, request, view, obj):
         return request.user.is_staff or obj == request.user
