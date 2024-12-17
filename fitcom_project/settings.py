@@ -39,8 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'backend.accounts',
-    'backend.fitcom_app',
+    'accounts',
+    'fitcom_app',
     'rest_framework',
     'rest_framework.authtoken',
     'drf_yasg',
@@ -105,7 +105,7 @@ MIDDLEWARE = [
     'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-ROOT_URLCONF = 'backend.fitcom_project.urls'
+ROOT_URLCONF = 'fitcom_project.urls'
 
 TEMPLATES = [
     {
@@ -123,7 +123,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'backend.fitcom_project.wsgi.application'
+WSGI_APPLICATION = 'fitcom_project.wsgi.application'
 
 
 # Database
