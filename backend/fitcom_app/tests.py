@@ -58,22 +58,19 @@ class UserCustomWorkoutProgramViewSetTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_retrieve_user_custom_workout_program(self):
-    # Create the UserCustomWorkoutProgram object
-        program = UserCustomWorkoutProgram.objects.create(
-            user=self.user,
-            name='Custom Program',
-            description='A custom program'
-        )
-        program.schedule.set([self.exercise])
-        program.save()  # Ensure the object is saved
 
-        # Use the correct URL pattern name
-        url = reverse('user-custom-workout-programs', args=[program.program_id])
-        response = self.client.get(url, format='json')
+            program = UserCustomWorkoutProgram.objects.create(
+                user=self.user,
+                name='Custom Program',
+                description='A custom program'
+            )
+            program.schedule.set([self.exercise])
+            program.save()
+            url = reverse('usercustomworkoutprogram-detail', args=[program.program_id])
+            response = self.client.get(url, format='json')
 
-        # Check the response status and data
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['name'], 'Custom Program')
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertEqual(response.data['name'], 'Custom Program')
 
 
 class PostViewSetTests(APITestCase):
@@ -118,6 +115,7 @@ class PostViewSetTests(APITestCase):
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['title'], 'Test Post')
+
 
 class CommentViewSetTests(APITestCase):
     def setUp(self):
