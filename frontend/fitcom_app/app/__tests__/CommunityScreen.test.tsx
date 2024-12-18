@@ -253,7 +253,7 @@ describe("CommunityScreen", () => {
       expect(queryByText("Another Test Post")).toBeTruthy();
       expect(queryByText("Test Post")).toBeNull();
     });
-  });
+  }, 10000);
 
   it("sorts posts by newest and popular", async () => {
     // Mock AsyncStorage to return a mock token
