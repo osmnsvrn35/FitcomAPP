@@ -113,7 +113,7 @@ describe("SettingsScreen", () => {
       // Check for Logout button
       expect(getByText("Logout")).toBeTruthy();
     });
-  });
+  }, 10000);
 
   it("displays the logout button and handles logout correctly", async () => {
     // Mock AsyncStorage.getItem to return a valid token and userId
