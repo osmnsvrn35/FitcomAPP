@@ -16,7 +16,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.x'  # Specify the Python version you need
+        python-version: '3.x' 
 
     - name: Install backend dependencies
       run: |
@@ -31,6 +31,29 @@ jobs:
         . ../venv/bin/activate
         python manage.py test
 
+  frontend:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14.x'  
+
+    - name: Install front-end dependencies
+      run: |
+        cd frontend/fitcom_app
+        npm install
+
+    - name: Run front-end tests
+      run: |
+        cd frontend/fitcom_app
+        npm test
+
+  
   deploy:
     runs-on: ubuntu-latest
     needs: [backend]
