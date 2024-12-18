@@ -2,7 +2,7 @@
   "name": "fitcom_app",
   "main": "expo-router/entry",
   "version": "1.0.0",
-  "proxy": "http://192.168.0.159:8092",
+  "proxy": "http://192.168.0.113:8092",
   "scripts": {
     "start": "concurrently \"node proxy.js\" \"expo start\"",
     "reset-project": "node ./scripts/reset-project.js",
@@ -89,7 +89,7 @@
       }
     },
     "extra": {
-      "proxy": "http://192.168.0.159:8092"
+      "proxy": "http://192.168.0.113:8092"
     }
   },
   "private": true

@@ -191,7 +191,7 @@ const HomeScreen = () => {
     params.oauth_signature = oauthSignature;
 
     const apiUrl = `https://platform.fatsecret.com/rest/server.api?${new URLSearchParams(params).toString()}`;
-    const proxyUrl = `http://192.168.0.159:8092/proxy?url=${encodeURIComponent(apiUrl)}`;
+    const proxyUrl = `http://192.168.0.113:8092/proxy?url=${encodeURIComponent(apiUrl)}`;
 
     try {
 
