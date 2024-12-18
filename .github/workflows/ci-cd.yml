@@ -70,4 +70,4 @@ jobs:
     - name: Deploy
       run: |
         # Add your deployment script here
-        echo "Deploying the application.."
+        echo "Deploying the application."
